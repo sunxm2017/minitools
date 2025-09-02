@@ -1,8 +1,263 @@
-<html>
-
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多功能计时器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            transition: background-color 0.5s;
+        }
+        .timer {
+            font-size: 48px;
+            margin-bottom: 20px;
+            min-height: 60px;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        #startBtn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #pauseBtn {
+            background-color: #f39c12;
+            color: white;
+        }
+        #resetBtn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .mode-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        .mode-btn.active {
+            background-color: #2980b9;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
+        }
+        .settings {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input {
+            padding: 8px;
+            font-size: 16px;
+            width: 60px;
+            text-align: center;
+            margin: 0 5px;
+        }
+        .alarm-text {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #e74c3c;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .alarm-text.show {
+            opacity: 1;
+        }
+    </style>
+</head>
 <body>
+    <h1>多功能计时器</h1>
+    <div class="timer" id="timer">00:00:00</div>
+    <div class="controls">
+        <button id="startBtn">开始</button>
+        <button id="pauseBtn">暂停</button>
+        <button id="resetBtn">重置</button>
+    </div>
+    <div>
+        <button class="mode-btn" id="countUpMode">正计时</button>
+        <button class="mode-btn active" id="countDownMode">倒计时</button>
+    </div>
+    <div class="settings" id="countDownSettings">
+        <div>设置倒计时时间：</div>
+        <div>
+            <input type="number" id="hours" min="0" value="0" placeholder="时"> :
+            <input type="number" id="minutes" min="0" max="59" value="5" placeholder="分"> :
+            <input type="number" id="seconds" min="0" max="59" value="0" placeholder="秒">
+        </div>
+    </div>
+    <div class="alarm-text" id="alarmText">时间到！🔔</div>
 
-<h1> hello 高燕娟</h1>
+    <!-- 音频元素（隐藏） -->
+    <audio id="alarmSound" preload="auto">
+        <source src="./timer.aac" type="audio/mpeg">
+        您的浏览器不支持音频元素。
+    </audio>
+
+    <script>
+        let timer;
+        let isRunning = false;
+        let startTime;
+        let elapsedTime = 0;
+        let countDownTime = 0;
+        let isCountDownMode = true;
+        let alarmSound = document.getElementById('alarmSound');
+        let alarmText = document.getElementById('alarmText');
+
+        const timerElement = document.getElementById('timer');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const countUpModeBtn = document.getElementById('countUpMode');
+        const countDownModeBtn = document.getElementById('countDownMode');
+        const countDownSettings = document.getElementById('countDownSettings');
+        const hoursInput = document.getElementById('hours');
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+
+        // 模式切换
+        countUpModeBtn.addEventListener('click', () => {
+            switchMode(false);
+        });
+        countDownModeBtn.addEventListener('click', () => {
+            switchMode(true);
+        });
+
+        function switchMode(isCountDown) {
+            isCountDownMode = isCountDown;
+            countUpModeBtn.classList.toggle('active', !isCountDown);
+            countDownModeBtn.classList.toggle('active', isCountDown);
+            countDownSettings.style.display = isCountDown ? 'block' : 'none';
+            resetTimer();
+        }
+
+        // 获取倒计时时间（毫秒）
+        function getCountDownTime() {
+            const hours = parseInt(hoursInput.value) || 0;
+            const minutes = parseInt(minutesInput.value) || 0;
+            const seconds = parseInt(secondsInput.value) || 0;
+            return (hours * 3600 + minutes * 60 + seconds) * 1000;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                if (isCountDownMode) {
+                    countDownTime = getCountDownTime();
+                    if (countDownTime <= 0) {
+                        alert('请设置有效的倒计时时间！');
+                        return;
+                    }
+                    startTime = Date.now();
+                } else {
+                    startTime = Date.now() - elapsedTime;
+                }
+                
+                timer = setInterval(updateTimer, 10);
+                isRunning = true;
+                alarmText.classList.remove('show');
+                document.body.style.backgroundColor = '#f0f0f0';
+            }
+        }
+
+        function pauseTimer() {
+            if (isRunning) {
+                clearInterval(timer);
+                if (isCountDownMode) {
+                    elapsedTime = countDownTime - (Date.now() - startTime);
+                } else {
+                    elapsedTime = Date.now() - startTime;
+                }
+                isRunning = false;
+            }
+        }
+
+        function resetTimer() {
+            clearInterval(timer);
+            isRunning = false;
+            elapsedTime = 0;
+            if (isCountDownMode) {
+                countDownTime = getCountDownTime();
+                updateTimerDisplay(countDownTime);
+            } else {
+                timerElement.textContent = '00:00:00';
+            }
+            alarmText.classList.remove('show');
+            document.body.style.backgroundColor = '#f0f0f0';
+        }
+
+        function updateTimer() {
+            const currentTime = Date.now();
+            let displayTime;
+
+            if (isCountDownMode) {
+                elapsedTime = countDownTime - (currentTime - startTime);
+                
+                // 倒计时结束
+                if (elapsedTime <= 0) {
+                    clearInterval(timer);
+                    isRunning = false;
+                    elapsedTime = 0;
+                    displayTime = 0;
+                    playAlarm();
+                } else {
+                    displayTime = elapsedTime;
+                }
+            } else {
+                elapsedTime = currentTime - startTime;
+                displayTime = elapsedTime;
+            }
+
+            updateTimerDisplay(displayTime);
+        }
+
+        function updateTimerDisplay(time) {
+            const date = new Date(time);
+            
+            if (isCountDownMode) {
+                const hours = String(date.getUTCHours()).padStart(2, '0');
+                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+                const milliseconds = String(Math.floor(date.getUTCMilliseconds() / 10)).padStart(2, '0');
+                timerElement.textContent = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+            } else {
+                const hours = String(date.getUTCHours()).padStart(2, '0');
+                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+                const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+                const milliseconds = String(Math.floor(date.getUTCMilliseconds() / 10)).padStart(2, '0');
+                timerElement.textContent = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+            }
+        }
+
+        function playAlarm() {
+            alarmSound.currentTime = 0; // 重置音频
+            alarmSound.play().catch(e => console.log("自动播放被阻止，请与页面交互后重试"));
+            alarmText.classList.add('show');
+            document.body.style.backgroundColor = '#fff3cd';
+        }
+
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        // 初始化倒计时模式
+        switchMode(true);
+    </script>
 </body>
-
 </html>
