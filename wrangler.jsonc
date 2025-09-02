@@ -3,7 +3,8 @@
  "compatibility_date": "2025-09-02",
 
  "site": {
-    "bucket": "./public",  // 静态文件目录路径（相对于 wrangler.jsonc）
-    "entry-point": "./workers-site"  // 可选：自定义 Workers Sites 初始化路径（默认自动生成）
+    "bucket": "./public"
+   
   }
+"main": "workers-site/index.js",
  }
