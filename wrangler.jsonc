@@ -3,8 +3,7 @@
  "compatibility_date": "2025-09-02",
 
  "site": {
-    "bucket": "./public"
-   
-  }
-"main": "workers-site/index.js",
+    "bucket": "./public"  
+  }，
+ "main":"workers-site/index.js"
  }
