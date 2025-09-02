@@ -1,9 +1,10 @@
-{
- "name": "minitools",
- "compatibility_date": "2025-09-02",
+ {
+  "name": "minitools",
+  "type": "webpack",
+  "workers_dev": true,
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS"
+  }
 
- "site": {
-    "bucket": "./public"  
-  },
- "main":"workers-site/index.js"
- }
+}
