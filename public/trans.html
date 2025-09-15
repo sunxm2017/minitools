@@ -73,6 +73,26 @@
             justify-content: center;
             margin-top: 10px;
         }
+
+        /* 输出区域包装：相对定位，把复制按钮放右上角 */
+        .output-wrapper {
+            position: relative;
+            margin-top: 20px;
+        }
+        .output-wrapper label {
+            margin-bottom: 8px;
+        }
+        #copyBtn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            background: #28a745;
+        }
+        #copyBtn:hover {
+            background: #218838;
+        }
     </style>
 </head>
 <body>
@@ -83,8 +103,8 @@
         <textarea id="inputArea" placeholder="苹果&#10;香蕉&#10;橙子"></textarea>
 
         <div class="options">
-            <label><input type="radio" name="sep" value="comma" > 逗号</label>
-            <label><input type="radio" name="sep" value="space" checked> 空格</label>
+            <label><input type="radio" name="sep" value="comma" checked> 逗号</label>
+            <label><input type="radio" name="sep" value="space"> 空格</label>
         </div>
 
         <div class="buttons">
@@ -92,8 +112,12 @@
             <button id="clearBtn">清空</button>
         </div>
 
-        <label for="outputArea" style="margin-top: 20px;">转换结果：</label>
-        <textarea id="outputArea" readonly></textarea>
+        <!-- 输出区域 -->
+        <div class="output-wrapper">
+            <label for="outputArea">转换结果：</label>
+            <button id="copyBtn">复制</button>
+            <textarea id="outputArea" readonly></textarea>
+        </div>
     </div>
 
     <script>
@@ -101,12 +125,13 @@
         const outputArea = document.getElementById('outputArea');
         const convertBtn = document.getElementById('convertBtn');
         const clearBtn   = document.getElementById('clearBtn');
+        const copyBtn    = document.getElementById('copyBtn');
 
         convertBtn.addEventListener('click', () => {
             const lines = inputArea.value
                 .split(/\r?\n/)
                 .map(l => l.trim())
-                .filter(Boolean); // 去掉空行
+                .filter(Boolean);
 
             if (lines.length === 0) {
                 outputArea.value = '';
@@ -115,13 +140,27 @@
 
             const sep = document.querySelector('input[name="sep"]:checked').value;
             const delimiter = sep === 'comma' ? ',' : ' ';
-
             outputArea.value = lines.join(delimiter);
         });
 
         clearBtn.addEventListener('click', () => {
             inputArea.value  = '';
             outputArea.value = '';
+        });
+
+        copyBtn.addEventListener('click', async () => {
+            if (!outputArea.value) return;
+            try {
+                await navigator.clipboard.writeText(outputArea.value);
+                copyBtn.textContent = '已复制';
+                setTimeout(() => copyBtn.textContent = '复制', 1200);
+            } catch (err) {
+                /* 降级方案 */
+                outputArea.select();
+                document.execCommand('copy');
+                copyBtn.textContent = '已复制';
+                setTimeout(() => copyBtn.textContent = '复制', 1200);
+            }
         });
     </script>
 </body>
