@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>列转行工具</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f7f7f7;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            color: #333;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            height: 180px;
+            resize: vertical;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .options {
+            margin: 15px 0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #007bff;
+            color: #fff;
+            transition: background .2s;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #clearBtn {
+            background: #6c757d;
+        }
+        #clearBtn:hover {
+            background: #5a6268;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>列转行工具</h1>
+
+        <label for="inputArea">输入列数据（每行一个元素）：</label>
+        <textarea id="inputArea" placeholder="苹果&#10;香蕉&#10;橙子"></textarea>
+
+        <div class="options">
+            <label><input type="radio" name="sep" value="comma" > 逗号</label>
+            <label><input type="radio" name="sep" value="space" checked> 空格</label>
+        </div>
+
+        <div class="buttons">
+            <button id="convertBtn">转换</button>
+            <button id="clearBtn">清空</button>
+        </div>
+
+        <label for="outputArea" style="margin-top: 20px;">转换结果：</label>
+        <textarea id="outputArea" readonly></textarea>
+    </div>
+
+    <script>
+        const inputArea  = document.getElementById('inputArea');
+        const outputArea = document.getElementById('outputArea');
+        const convertBtn = document.getElementById('convertBtn');
+        const clearBtn   = document.getElementById('clearBtn');
+
+        convertBtn.addEventListener('click', () => {
+            const lines = inputArea.value
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(Boolean); // 去掉空行
+
+            if (lines.length === 0) {
+                outputArea.value = '';
+                return;
+            }
+
+            const sep = document.querySelector('input[name="sep"]:checked').value;
+            const delimiter = sep === 'comma' ? ',' : ' ';
+
+            outputArea.value = lines.join(delimiter);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            inputArea.value  = '';
+            outputArea.value = '';
+        });
+    </script>
+</body>
+</html>
