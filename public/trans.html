@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>列转行工具</title>
+    <title>行列转换工具</title>
     <style>
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -26,6 +26,35 @@
             margin-top: 0;
             text-align: center;
             color: #333;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #c5c3c38e;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 16px;
+            transition: all .2s;
+        }
+        .tab.active {
+            background:#007bff; 
+            border-bottom: 2px solid #007bff;
+          
+            font-weight: bold;
+        }
+        .tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
         label {
             font-weight: bold;
@@ -61,10 +90,10 @@
         button:hover {
             background: #0056b3;
         }
-        #clearBtn {
+        #clearBtnCol, #clearBtnRow {
             background: #6c757d;
         }
-        #clearBtn:hover {
+        #clearBtnCol:hover, #clearBtnRow:hover {
             background: #5a6268;
         }
         .buttons {
@@ -73,8 +102,6 @@
             justify-content: center;
             margin-top: 10px;
         }
-
-        /* 输出区域包装：相对定位，把复制按钮放右上角 */
         .output-wrapper {
             position: relative;
             margin-top: 20px;
@@ -82,7 +109,7 @@
         .output-wrapper label {
             margin-bottom: 8px;
         }
-        #copyBtn {
+        #copyBtnCol, #copyBtnRow {
             position: absolute;
             right: 8px;
             top: 8px;
@@ -90,76 +117,151 @@
             font-size: 13px;
             background: #28a745;
         }
-        #copyBtn:hover {
+        #copyBtnCol:hover, #copyBtnRow:hover {
             background: #218838;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>列转行工具</h1>
+        <h1>行列转换工具</h1>
 
-        <label for="inputArea">输入列数据：</label>
-        <textarea id="inputArea" placeholder="小玫&#10;小满&#10;燕娟"></textarea>
-
-        <div class="options">
-            <label><input type="radio" name="sep" value="comma"> 逗号</label>
-            <label><input type="radio" name="sep" value="space" checked> 空格</label>
+        <!-- 标签页 -->
+        <div class="tabs">
+            <button class="tab active" data-tab="col-to-row">列转行</button>
+            <button class="tab" data-tab="row-to-col">行转列</button>
         </div>
 
-        <div class="buttons">
-            <button id="convertBtn">转换</button>
-            <button id="clearBtn">清空</button>
+        <!-- 列转行 -->
+        <div id="col-to-row" class="tab-content active">
+            <label for="inputAreaCol">输入列数据：</label>
+            <textarea id="inputAreaCol" placeholder="小玫&#10;小满&#10;燕娟"></textarea>
+
+            <div class="options">
+                <label><input type="radio" name="sepCol" value="comma"> 逗号</label>
+                <label><input type="radio" name="sepCol" value="space" checked> 空格</label>
+            </div>
+
+            <div class="buttons">
+                <button id="convertBtnCol">转换</button>
+                <button id="clearBtnCol">清空</button>
+            </div>
+
+            <div class="output-wrapper">
+                <label for="outputAreaCol">转换结果：</label>
+                <button id="copyBtnCol">复制</button>
+                <textarea id="outputAreaCol" readonly></textarea>
+            </div>
         </div>
 
-        <!-- 输出区域 -->
-        <div class="output-wrapper">
-            <label for="outputArea">转换结果：</label>
-            <button id="copyBtn">复制</button>
-            <textarea id="outputArea" readonly></textarea>
+        <!-- 行转列 -->
+        <div id="row-to-col" class="tab-content">
+            <label for="inputAreaRow">输入行数据：</label>
+            <textarea id="inputAreaRow" placeholder="小玫,小满,燕娟"></textarea>
+
+            <div class="options">
+                <label><input type="radio" name="sepRow" value="comma" checked> 逗号</label>
+                <label><input type="radio" name="sepRow" value="space"> 空格</label>
+                <label><input type="radio" name="sepRow" value="semicolon"> 分号</label>
+            </div>
+
+            <div class="buttons">
+                <button id="convertBtnRow">转换</button>
+                <button id="clearBtnRow">清空</button>
+            </div>
+
+            <div class="output-wrapper">
+                <label for="outputAreaRow">转换结果：</label>
+                <button id="copyBtnRow">复制</button>
+                <textarea id="outputAreaRow" readonly></textarea>
+            </div>
         </div>
     </div>
 
     <script>
-        const inputArea  = document.getElementById('inputArea');
-        const outputArea = document.getElementById('outputArea');
-        const convertBtn = document.getElementById('convertBtn');
-        const clearBtn   = document.getElementById('clearBtn');
-        const copyBtn    = document.getElementById('copyBtn');
+        // 标签页切换
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const target = tab.dataset.tab;
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(target).classList.add('active');
+            });
+        });
 
-        convertBtn.addEventListener('click', () => {
-            const lines = inputArea.value
+        // 列转行功能
+        const inputAreaCol  = document.getElementById('inputAreaCol');
+        const outputAreaCol = document.getElementById('outputAreaCol');
+        const convertBtnCol = document.getElementById('convertBtnCol');
+        const clearBtnCol   = document.getElementById('clearBtnCol');
+        const copyBtnCol    = document.getElementById('copyBtnCol');
+
+        convertBtnCol.addEventListener('click', () => {
+            const lines = inputAreaCol.value
                 .split(/\r?\n/)
                 .map(l => l.trim())
                 .filter(Boolean);
 
             if (lines.length === 0) {
-                outputArea.value = '';
+                outputAreaCol.value = '';
                 return;
             }
 
-            const sep = document.querySelector('input[name="sep"]:checked').value;
+            const sep = document.querySelector('input[name="sepCol"]:checked').value;
             const delimiter = sep === 'comma' ? ',' : ' ';
-            outputArea.value = lines.join(delimiter);
+            outputAreaCol.value = lines.join(delimiter);
         });
 
-        clearBtn.addEventListener('click', () => {
-            inputArea.value  = '';
-            outputArea.value = '';
+        clearBtnCol.addEventListener('click', () => {
+            inputAreaCol.value  = '';
+            outputAreaCol.value = '';
         });
 
-        copyBtn.addEventListener('click', async () => {
-            if (!outputArea.value) return;
+        copyBtnCol.addEventListener('click', async () => {
+            if (!outputAreaCol.value) return;
             try {
-                await navigator.clipboard.writeText(outputArea.value);
-                copyBtn.textContent = '已复制';
-                setTimeout(() => copyBtn.textContent = '复制', 1200);
+                await navigator.clipboard.writeText(outputAreaCol.value);
+                copyBtnCol.textContent = '已复制';
+                setTimeout(() => copyBtnCol.textContent = '复制', 1200);
             } catch (err) {
-                /* 降级方案 */
-                outputArea.select();
+                outputAreaCol.select();
                 document.execCommand('copy');
-                copyBtn.textContent = '已复制';
-                setTimeout(() => copyBtn.textContent = '复制', 1200);
+                copyBtnCol.textContent = '已复制';
+                setTimeout(() => copyBtnCol.textContent = '复制', 1200);
+            }
+        });
+
+        // 行转列功能
+        const inputAreaRow  = document.getElementById('inputAreaRow');
+        const outputAreaRow = document.getElementById('outputAreaRow');
+        const convertBtnRow = document.getElementById('convertBtnRow');
+        const clearBtnRow   = document.getElementById('clearBtnRow');
+        const copyBtnRow    = document.getElementById('copyBtnRow');
+
+        convertBtnRow.addEventListener('click', () => {
+            const sep = document.querySelector('input[name="sepRow"]:checked').value;
+            const delimiter = sep === 'comma' ? ',' : sep === 'semicolon' ? ';' : /\s+/;
+            const items = inputAreaRow.value.split(delimiter).map(i => i.trim()).filter(Boolean);
+            outputAreaRow.value = items.join('\n');
+        });
+
+        clearBtnRow.addEventListener('click', () => {
+            inputAreaRow.value  = '';
+            outputAreaRow.value = '';
+        });
+
+        copyBtnRow.addEventListener('click', async () => {
+            if (!outputAreaRow.value) return;
+            try {
+                await navigator.clipboard.writeText(outputAreaRow.value);
+                copyBtnRow.textContent = '已复制';
+                setTimeout(() => copyBtnRow.textContent = '复制', 1200);
+            } catch (err) {
+                outputAreaRow.select();
+                document.execCommand('copy');
+                copyBtnRow.textContent = '已复制';
+                setTimeout(() => copyBtnRow.textContent = '复制', 1200);
             }
         });
     </script>
