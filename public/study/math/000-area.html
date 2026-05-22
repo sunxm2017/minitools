@@ -131,10 +131,16 @@
             height: 2px;
             background-color: #333;
         }
+       
         .size-label.vertical .line {
             width: 2px;
             height: 100px;
         }
+       .size-label.ext-vertical  span.line {
+            width: 2px;
+            height: 60px;
+        }
+
         .size-label .text {
             margin: 0 5px;
         }
@@ -143,12 +149,12 @@
         }
         /* 扩展题尺寸标注 */
         .size-label.ext-horizontal {
-            top: -35px;
+            top: -15px;
             left: 10px;
         }
         .size-label.ext-vertical {
             top: 10px;
-            right: -55px;
+            right: -85px;
             flex-direction: column;
         }
         .label {
@@ -394,8 +400,8 @@
         <div class="main-wrap ext-wrap">
             <div class="main-box ext-box">
                 <div class="field ext-field"></div>
-                <div class="road-h ext-road-h"></div>
-                <div class="road-v ext-road-v"></div>
+                <div class="road-h ext-road-h">1m</div>
+                <div class="road-v ext-road-v">2m</div>
                 <div class="grass ext-g1"></div>
                 <div class="grass ext-g2"></div>
                 <div class="grass ext-g3"></div>
