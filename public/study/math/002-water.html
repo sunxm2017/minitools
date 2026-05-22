@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瓶子倒水重量计算题</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{padding:25px;text-align:center;font-family:微软雅黑;line-height:1.6;}
+h3{margin-bottom:15px;color:#222;}
+.question{
+    font-size:16px;
+    background:#f0f7ff;
+    padding:12px;
+    border-radius:6px;
+    max-width:360px;
+    margin:0 auto 20px;
+}
+.bottle-wrap{
+    position:relative;
+    width:260px;
+    height:300px;
+    margin:0 auto 20px;
+}
+.neck{
+    width:45px;height:38px;
+    border:3px solid #666;
+    border-bottom:none;
+    border-radius:8px 8px 0 0;
+    margin:0 auto;
+    transition:transform 0.7s ease;
+}
+.bottle{
+    width:110px;height:250px;
+    border:3px solid #666;
+    border-radius:0 0 18px 18px;
+    margin:0 auto;
+    position:relative;
+    overflow:hidden;
+    background:#fff;
+    transition:transform 0.7s ease;
+}
+.tilt{transform:rotate(-28deg);}
+.water{
+    position:absolute;
+    bottom:0;left:0;right:0;
+    background:#42a5f5;
+    transition:height 1s ease;
+}
+.water-flow{
+    position:absolute;
+    left:50%;top:-35px;
+    width:8px;height:0;
+    background:#42a5f5;
+    border-radius:4px;
+    transform:translateX(-50%);
+    transition:height 0.6s linear;
+    opacity:0;
+}
+/* 重量标注文字 */
+.weight-tag{
+    position:absolute;
+    top:80px;
+    right:10px;
+    font-size:16px;
+    font-weight:bold;
+    color:#c0392b;
+    white-space:nowrap;
+}
+.form-area{
+    font-size:16px;
+    margin:15px auto;
+    max-width:340px;
+    text-align:left;
+    padding:10px;
+}
+input{
+    width:70px;
+    border:1px solid #ccc;
+    padding:4px;
+    text-align:center;
+    margin:0 4px;
+}
+.btn-group{margin-top:15px;}
+button{
+    padding:7px 16px;
+    margin:0 6px;
+    border:none;
+    border-radius:4px;
+    background:#2196f3;
+    color:#fff;
+    font-size:14px;
+    cursor:pointer;
+}
+button:hover{opacity:0.9;}
+</style>
+</head>
+<body>
+<h3>瓶子倒水重量问题演示</h3>
+
+<div class="question">
+题目：一瓶水连瓶共重150克，倒出一半水后，连瓶重90克。<br>
+求：原来水重多少克？瓶子重多少克？
+</div>
+
+<div class="bottle-wrap">
+    <div class="neck" id="neck"></div>
+    <div class="bottle" id="bottle">
+        <div class="water" id="water"></div>
+    </div>
+    <div class="water-flow" id="flow"></div>
+    <!-- 重量标签 -->
+    <div class="weight-tag" id="weightText">连瓶共重：150 克</div>
+</div>
+
+<div class="form-area">
+1. 倒出的一半水重量：<input type="text"> 克<br>
+2. 原来全部水重量：<input type="text"> 克<br>
+3. 空瓶子重量：<input type="text"> 克
+</div>
+
+<div class="btn-group">
+    <button onclick="setFull()">初始满水</button>
+    <button onclick="pourHalfWater()">倒出一半水</button>
+    <button onclick="resetBottle()">重置</button>
+</div>
+
+<script>
+const bottle = document.getElementById('bottle');
+const neck = document.getElementById('neck');
+const water = document.getElementById('water');
+const flow = document.getElementById('flow');
+const weightText = document.getElementById('weightText');
+
+const fullHeight = 250;
+const halfHeight = 125;
+
+// 页面默认满水 + 对应重量
+window.onload = function(){
+    water.style.height = fullHeight + 'px';
+    weightText.innerText = "连瓶共重：150 克";
+}
+
+// 恢复满水状态
+function setFull(){
+    bottle.classList.remove('tilt');
+    neck.classList.remove('tilt');
+    flow.style.opacity = 0;
+    flow.style.height = 0;
+    water.style.height = fullHeight + 'px';
+    weightText.innerText = "连瓶共重：150 克";
+}
+
+// 倒出一半水，同步动画+重量切换
+function pourHalfWater(){
+    bottle.classList.add('tilt');
+    neck.classList.add('tilt');
+    flow.style.opacity = 1;
+    flow.style.height = 60;
+
+    setTimeout(function(){
+        water.style.height = halfHeight + 'px';
+        // 切换为倒水后重量
+        weightText.innerText = "倒出一半后：90 克";
+    }, 300);
+
+    setTimeout(function(){
+        flow.style.height = 0;
+        flow.style.opacity = 0;
+        bottle.classList.remove('tilt');
+        neck.classList.remove('tilt');
+    }, 1400);
+}
+
+// 重置为空瓶
+function resetBottle(){
+    bottle.classList.remove('tilt');
+    neck.classList.remove('tilt');
+    flow.style.height = 0;
+    flow.style.opacity = 0;
+    water.style.height = 0;
+    weightText.innerText = "空瓶状态";
+}
+</script>
+</body>
+</html>

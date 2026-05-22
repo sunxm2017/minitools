@@ -1,263 +1,774 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多功能计时器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>工具导航</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧导航栏 */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
             display: flex;
             flex-direction: column;
+            transition: transform 0.3s ease;
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar.collapsed {
+            transform: translateX(-100%);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .sidebar-menu {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+        }
+
+        .menu-item.active {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+
+        .menu-item-icon {
+            font-size: 1.4rem;
+            width: 32px;
+            height: 32px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f0f0;
-            transition: background-color 0.5s;
         }
-        .timer {
-            font-size: 48px;
-            margin-bottom: 20px;
-            min-height: 60px;
+
+        .menu-item-text {
+            font-size: 1rem;
+            font-weight: 500;
         }
-        .controls {
-            margin-bottom: 20px;
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.85rem;
+            opacity: 0.7;
         }
-        button {
-            font-size: 16px;
-            padding: 10px 20px;
-            margin: 0 5px;
-            cursor: pointer;
+
+        /* 切换按钮 */
+        .toggle-btn {
+            position: fixed;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 200;
+            width: 40px;
+            height: 40px;
+            border-radius: 0 10px 10px 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 4px;
-            transition: all 0.2s;
+            color: #fff;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: left 0.3s ease, opacity 0.2s;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.15);
         }
-        button:hover {
+
+        .toggle-btn:hover {
             opacity: 0.9;
-            transform: translateY(-1px);
         }
-        #startBtn {
-            background-color: #4CAF50;
-            color: white;
+
+        .toggle-btn.hidden {
+            left: -40px;
         }
-        #pauseBtn {
-            background-color: #f39c12;
-            color: white;
+
+        .toggle-btn.rotated {
+            transform: translateY(-50%) rotate(180deg);
         }
-        #resetBtn {
-            background-color: #e74c3c;
-            color: white;
-        }
-        .mode-btn {
-            background-color: #3498db;
-            color: white;
-        }
-        .mode-btn.active {
-            background-color: #2980b9;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.5);
-        }
-        .settings {
-            margin-top: 20px;
+
+        /* 主内容区域 */
+        .main-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            padding: 2px 3px;
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .content-header h2 {
+            font-size: 1.6rem;
+            color: #333;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* 工具卡片 */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+        }
+
+        .tool-card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #eee;
+        }
+
+        .tool-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+
+        .tool-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .tool-card h3 {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .tool-card p {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 关于页面 */
+        .about-content {
+            max-width: 800px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .about-content h3 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .about-content p {
+            font-size: 1rem;
+            color: #555;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            font-size: 1rem;
+            color: #555;
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        /* 设置页面 */
+        .settings-content {
+            max-width: 600px;
+            background: #fff;
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+        }
+
+        .setting-label {
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .setting-desc {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .toggle-switch {
+            width: 48px;
+            height: 28px;
+            background: #ddd;
+            border-radius: 14px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+            box-shadow: 1px 2px 5px rgba(0,0,0,0.15);
+        }
+
+        .toggle-switch.active::after {
+            left: 22px;
+        }
+
+        /* 带子菜单的菜单项 */
+        .menu-item.has-submenu {
+            flex-wrap: wrap;
+        }
+
+        /* 子菜单箭头 */
+        .submenu-arrow {
+            margin-left: auto;
+            font-size: 0.7rem;
+            color: #888;
+            transition: transform 0.3s ease;
+        }
+
+        .menu-item.has-submenu.active .submenu-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* 子菜单容器 */
+        .menu-item.has-submenu .menu-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* 子菜单 */
+        .submenu {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            width: 100%;
+            margin-top: -8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .menu-item.has-submenu.active .submenu {
+            display: block;
+        }
+
+        .submenu-item {
+            padding: 12px 16px 12px 48px;
+            color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .submenu-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            color: #fff;
+            padding-left: 52px;
+        }
+
+        .submenu-item.active {
+            background: rgba(102, 126, 234, 0.3);
+            color: #fff;
+        }
+
+        /* 三级子菜单 */
+        .submenu-item.has-child {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
         }
-        input {
-            padding: 8px;
-            font-size: 16px;
-            width: 60px;
-            text-align: center;
-            margin: 0 5px;
+
+        .submenu-item.has-child::after {
+            content: '▶';
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 0.5);
+            transition: transform 0.3s ease;
         }
-        .alarm-text {
-            margin-top: 20px;
-            font-size: 20px;
-            color: #e74c3c;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.5s;
+
+        .submenu-item.has-child.active::after {
+            transform: rotate(90deg);
         }
-        .alarm-text.show {
-            opacity: 1;
+
+        .third-level-menu {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .submenu-item.has-child.active + .third-level-menu {
+            display: block;
+        }
+
+        .third-level-item {
+            padding: 10px 16px 10px 68px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .third-level-item:hover {
+            background: rgba(102, 126, 234, 0.2);
+            color: #fff;
+            padding-left: 72px;
+        }
+
+        .third-level-item.active {
+            background: rgba(102, 126, 234, 0.3);
+            color: #fff;
+        }
+
+        /* 页面隐藏 */
+        .page-content {
+            display: none;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 240px;
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+            }
+
+            .content-header {
+                padding: 5px 5px;
+            }
+
+            .content-header h2 {
+                font-size: 1.3rem;
+            }
+
+            .content-body {
+                padding: 20px;
+            }
+
+            .tools-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .tool-card {
+                padding: 24px 16px;
+            }
+
+            .tool-icon {
+                width: 65px;
+                height: 65px;
+                font-size: 2rem;
+            }
+
+            .about-content, .settings-content {
+                padding: 24px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>多功能计时器</h1>
-    <div class="timer" id="timer">00:00:00</div>
-    <div class="controls">
-        <button id="startBtn">开始</button>
-        <button id="pauseBtn">暂停</button>
-        <button id="resetBtn">重置</button>
-    </div>
-    <div>
-        <button class="mode-btn" id="countUpMode">正计时</button>
-        <button class="mode-btn active" id="countDownMode">倒计时</button>
-    </div>
-    <div class="settings" id="countDownSettings">
-        <div>设置倒计时时间：</div>
-        <div>
-            <input type="number" id="hours" min="0" value="0" placeholder="时"> :
-            <input type="number" id="minutes" min="0" max="59" value="5" placeholder="分"> :
-            <input type="number" id="seconds" min="0" max="59" value="0" placeholder="秒">
-        </div>
-    </div>
-    <div class="alarm-text" id="alarmText">时间到！🔔</div>
+    <div class="app-container">
+        <!-- 左侧导航栏 -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>迷你工具集</h1>
+            </div>
+            <nav class="sidebar-menu">
+                <div class="menu-item active" data-page="home">
+                    <div class="menu-item-icon">🏠</div>
+                    <span class="menu-item-text">首页</span>
+                </div>
+                
+                <!-- 工具库分类 -->
+                <div class="menu-item has-submenu">
+                    <div class="menu-content">
+                        <div class="menu-item-icon">🛠️</div>
+                        <span class="menu-item-text">工具库</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu">
+                        <div class="submenu-item" data-page="tools">工具列表</div>
+                        <div class="submenu-item" onclick="navigateTo('trans.html')">行列转换</div>
+                        <div class="submenu-item" onclick="navigateTo('tools/alert.html')">提醒工具</div>
+                    </div>
+                </div>
+                
+                <!-- 数学分类 -->
+                <div class="menu-item has-submenu">
+                    <div class="menu-content">
+                        <div class="menu-item-icon">�</div>
+                        <span class="menu-item-text">数学</span>
+                        <span class="submenu-arrow">▼</span>
+                    </div>
+                    <div class="submenu">
+                        <!-- 面积类 -->
+                        <div class="submenu-item has-child">面积</div>
+                        <div class="third-level-menu">
+                            <div class="third-level-item" data-iframe="study/math/000-area.html">面积计算</div>
+                        </div>
+                        <!-- 重量类 -->
+                        <div class="submenu-item has-child">重量</div>
+                        <div class="third-level-menu">
+                            <div class="third-level-item" data-iframe="study/math/002-water.html">倒水问题</div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+          
+        </aside>
 
-    <!-- 音频元素（隐藏） -->
-    <audio id="alarmSound" preload="auto">
-        <source src="./timer.aac" type="audio/mpeg">
-        您的浏览器不支持音频元素。
-    </audio>
+        <!-- 切换按钮 -->
+        <button class="toggle-btn" id="toggleBtn" onclick="toggleSidebar()">
+            ☰
+        </button>
+
+        <!-- 主内容区域 -->
+        <main class="main-content">
+            <header class="content-header" id="contentHeader">
+                <h2>首页</h2>
+            </header>
+            <div class="content-body">
+                <!-- 首页内容 -->
+                <div class="page-content active" id="page-home">
+                    <div class="tools-grid">
+                        <div class="tool-card" onclick="navigateTo('trans.html')">
+                            <div class="tool-icon">↔️</div>
+                            <h3>行列转换</h3>
+                            <p>快速将列数据转为行，或行数据转为列，支持多种分隔符</p>
+                        </div>
+                        <div class="tool-card" onclick="navigateTo('tools/alert.html')">
+                            <div class="tool-icon">🔔</div>
+                            <h3>提醒工具</h3>
+                            <p>设置定时提醒，不错过重要事项</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 工具库内容 -->
+                <div class="page-content" id="page-tools">
+                    <div class="tools-grid">
+                        <div class="tool-card" onclick="navigateTo('trans.html')">
+                            <div class="tool-icon">↔️</div>
+                            <h3>行列转换</h3>
+                            <p>快速将列数据转为行，或行数据转为列，支持多种分隔符</p>
+                        </div>
+                        <div class="tool-card" onclick="navigateTo('tools/alert.html')">
+                            <div class="tool-icon">🔔</div>
+                            <h3>提醒工具</h3>
+                            <p>设置定时提醒，不错过重要事项</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- iframe嵌入页面 -->
+                <div class="page-content" id="page-iframe">
+                    <iframe id="contentIframe" src="" style="width: 100%; border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08);"></iframe>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <script>
-        let timer;
-        let isRunning = false;
-        let startTime;
-        let elapsedTime = 0;
-        let countDownTime = 0;
-        let isCountDownMode = true;
-        let alarmSound = document.getElementById('alarmSound');
-        let alarmText = document.getElementById('alarmText');
-
-        const timerElement = document.getElementById('timer');
-        const startBtn = document.getElementById('startBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const countUpModeBtn = document.getElementById('countUpMode');
-        const countDownModeBtn = document.getElementById('countDownMode');
-        const countDownSettings = document.getElementById('countDownSettings');
-        const hoursInput = document.getElementById('hours');
-        const minutesInput = document.getElementById('minutes');
-        const secondsInput = document.getElementById('seconds');
-
-        // 模式切换
-        countUpModeBtn.addEventListener('click', () => {
-            switchMode(false);
-        });
-        countDownModeBtn.addEventListener('click', () => {
-            switchMode(true);
-        });
-
-        function switchMode(isCountDown) {
-            isCountDownMode = isCountDown;
-            countUpModeBtn.classList.toggle('active', !isCountDown);
-            countDownModeBtn.classList.toggle('active', isCountDown);
-            countDownSettings.style.display = isCountDown ? 'block' : 'none';
-            resetTimer();
-        }
-
-        // 获取倒计时时间（毫秒）
-        function getCountDownTime() {
-            const hours = parseInt(hoursInput.value) || 0;
-            const minutes = parseInt(minutesInput.value) || 0;
-            const seconds = parseInt(secondsInput.value) || 0;
-            return (hours * 3600 + minutes * 60 + seconds) * 1000;
-        }
-
-        function startTimer() {
-            if (!isRunning) {
-                if (isCountDownMode) {
-                    countDownTime = getCountDownTime();
-                    if (countDownTime <= 0) {
-                        alert('请设置有效的倒计时时间！');
-                        return;
-                    }
-                    startTime = Date.now();
-                } else {
-                    startTime = Date.now() - elapsedTime;
-                }
-                
-                timer = setInterval(updateTimer, 10);
-                isRunning = true;
-                alarmText.classList.remove('show');
-                document.body.style.backgroundColor = '#f0f0f0';
-            }
-        }
-
-        function pauseTimer() {
-            if (isRunning) {
-                clearInterval(timer);
-                if (isCountDownMode) {
-                    elapsedTime = countDownTime - (Date.now() - startTime);
-                } else {
-                    elapsedTime = Date.now() - startTime;
-                }
-                isRunning = false;
-            }
-        }
-
-        function resetTimer() {
-            clearInterval(timer);
-            isRunning = false;
-            elapsedTime = 0;
-            if (isCountDownMode) {
-                countDownTime = getCountDownTime();
-                updateTimerDisplay(countDownTime);
-            } else {
-                timerElement.textContent = '00:00:00';
-            }
-            alarmText.classList.remove('show');
-            document.body.style.backgroundColor = '#f0f0f0';
-        }
-
-        function updateTimer() {
-            const currentTime = Date.now();
-            let displayTime;
-
-            if (isCountDownMode) {
-                elapsedTime = countDownTime - (currentTime - startTime);
-                
-                // 倒计时结束
-                if (elapsedTime <= 0) {
-                    clearInterval(timer);
-                    isRunning = false;
-                    elapsedTime = 0;
-                    displayTime = 0;
-                    playAlarm();
-                } else {
-                    displayTime = elapsedTime;
-                }
-            } else {
-                elapsedTime = currentTime - startTime;
-                displayTime = elapsedTime;
-            }
-
-            updateTimerDisplay(displayTime);
-        }
-
-        function updateTimerDisplay(time) {
-            const date = new Date(time);
+        // 切换侧边栏显示/隐藏
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggleBtn = document.getElementById('toggleBtn');
             
-            if (isCountDownMode) {
-                const hours = String(date.getUTCHours()).padStart(2, '0');
-                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-                const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-                const milliseconds = String(Math.floor(date.getUTCMilliseconds() / 10)).padStart(2, '0');
-                timerElement.textContent = `${hours}:${minutes}:${seconds}.${milliseconds}`;
-            } else {
-                const hours = String(date.getUTCHours()).padStart(2, '0');
-                const minutes = String(date.getUTCMinutes()).padStart(2, '0');
-                const seconds = String(date.getUTCSeconds()).padStart(2, '0');
-                const milliseconds = String(Math.floor(date.getUTCMilliseconds() / 10)).padStart(2, '0');
-                timerElement.textContent = `${hours}:${minutes}:${seconds}.${milliseconds}`;
+            sidebar.classList.toggle('collapsed');
+            toggleBtn.classList.toggle('rotated');
+        }
+
+        // 切换页面
+        const menuItems = document.querySelectorAll('.menu-item');
+        const submenuItems = document.querySelectorAll('.submenu-item');
+        const thirdLevelItems = document.querySelectorAll('.third-level-item');
+        const pageContents = document.querySelectorAll('.page-content');
+        const contentHeader = document.getElementById('contentHeader');
+        const contentIframe = document.getElementById('contentIframe');
+
+        const pageTitles = {
+            'home': '首页',
+            'tools': '工具库',
+            'iframe': '学习工具'
+        };
+
+        // 主菜单项点击处理
+        menuItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const pageId = item.dataset.page;
+                const hasSubmenu = item.classList.contains('has-submenu');
+                
+                // 如果有子菜单，先切换展开/折叠
+                if (hasSubmenu) {
+                    item.classList.toggle('active');
+                    // 阻止事件冒泡，避免触发子菜单项的点击
+                    return;
+                }
+                
+                // 更新导航激活状态
+                menuItems.forEach(i => i.classList.remove('active'));
+                submenuItems.forEach(i => i.classList.remove('active'));
+                thirdLevelItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                // 隐藏所有页面内容
+                pageContents.forEach(page => page.classList.remove('active'));
+                
+                if (pageId) {
+                    // 内部页面方式
+                    document.getElementById(`page-${pageId}`).classList.add('active');
+                    contentHeader.querySelector('h2').textContent = pageTitles[pageId];
+                }
+            });
+        });
+
+        // 子菜单项点击处理
+        submenuItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡到父菜单
+                
+                const hasChild = item.classList.contains('has-child');
+                
+                // 如果有三级子菜单，先切换展开/折叠
+                if (hasChild) {
+                    item.classList.toggle('active');
+                    return;
+                }
+                
+                const pageId = item.dataset.page;
+                const iframeSrc = item.dataset.iframe;
+                const parentMenu = item.closest('.menu-item.has-submenu');
+                
+                // 更新导航激活状态（保留已展开的父菜单）
+                menuItems.forEach(i => {
+                    // 保留当前父菜单的展开状态
+                    if (i !== parentMenu && !i.classList.contains('has-submenu')) {
+                        i.classList.remove('active');
+                    }
+                });
+                submenuItems.forEach(i => {
+                    // 移除其他子菜单的激活状态，但保留有子菜单的项的展开状态
+                    if (i !== item && !i.classList.contains('has-child')) {
+                        i.classList.remove('active');
+                    }
+                });
+                thirdLevelItems.forEach(i => i.classList.remove('active'));
+                
+                // 激活父菜单和当前子菜单
+                if (parentMenu) {
+                    parentMenu.classList.add('active');
+                }
+                item.classList.add('active');
+                
+                // 隐藏所有页面内容
+                pageContents.forEach(page => page.classList.remove('active'));
+                
+                if (iframeSrc) {
+                    // iframe嵌入方式
+                    contentIframe.src = iframeSrc;
+                    document.getElementById('page-iframe').classList.add('active');
+                    // 从文件名提取标题
+                    const fileName = iframeSrc.split('/').pop().replace('.html', '');
+                    contentHeader.querySelector('h2').textContent = fileName === '000-area' ? '面积计算' : '倒水问题';
+                    // 动态设置iframe高度，避免多重滚动条
+                    setTimeout(function() {
+                        resizeIframe();
+                    }, 500);
+                } else if (pageId) {
+                    // 内部页面方式
+                    document.getElementById(`page-${pageId}`).classList.add('active');
+                    contentHeader.querySelector('h2').textContent = pageTitles[pageId];
+                }
+            });
+        });
+
+        // 三级菜单项点击处理
+        thirdLevelItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡
+                
+                const iframeSrc = item.dataset.iframe;
+                const parentSubmenu = item.closest('.submenu-item.has-child');
+                const parentMenu = item.closest('.menu-item.has-submenu');
+                
+                // 更新导航激活状态（保留已展开的父菜单）
+                menuItems.forEach(i => {
+                    // 保留当前父菜单的展开状态
+                    if (i !== parentMenu && !i.classList.contains('has-submenu')) {
+                        i.classList.remove('active');
+                    }
+                });
+                submenuItems.forEach(i => {
+                    // 保留有子菜单的项的展开状态
+                    if (i !== parentSubmenu && !i.classList.contains('has-child')) {
+                        i.classList.remove('active');
+                    }
+                });
+                thirdLevelItems.forEach(i => i.classList.remove('active'));
+                
+                // 激活父菜单和当前三级菜单
+                if (parentMenu) {
+                    parentMenu.classList.add('active');
+                }
+                if (parentSubmenu) {
+                    parentSubmenu.classList.add('active');
+                }
+                item.classList.add('active');
+                
+                // 隐藏所有页面内容
+                pageContents.forEach(page => page.classList.remove('active'));
+                
+                if (iframeSrc) {
+                    // iframe嵌入方式
+                    contentIframe.src = iframeSrc;
+                    document.getElementById('page-iframe').classList.add('active');
+                    // 从文件名提取标题
+                    const fileName = iframeSrc.split('/').pop().replace('.html', '');
+                    contentHeader.querySelector('h2').textContent = fileName === '000-area' ? '面积计算' : '倒水问题';
+                    // 动态设置iframe高度，避免多重滚动条
+                    setTimeout(function() {
+                        resizeIframe();
+                    }, 500);
+                }
+            });
+        });
+
+        // 跳转到工具页面
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+
+        // 动态调整iframe高度，避免多重滚动条
+        function resizeIframe() {
+            const iframe = document.getElementById('contentIframe');
+            if (iframe && iframe.contentDocument) {
+                // 获取内容高度
+                const contentHeight = iframe.contentDocument.body.scrollHeight;
+                // 获取窗口可用高度（减去header和其他元素）
+                const windowHeight = window.innerHeight - 120; // 减去header高度和边距
+                // 使用较大的值
+                iframe.style.height = Math.max(contentHeight, windowHeight) + 'px';
             }
         }
 
-        function playAlarm() {
-            alarmSound.currentTime = 0; // 重置音频
-            alarmSound.play().catch(e => console.log("自动播放被阻止，请与页面交互后重试"));
-            alarmText.classList.add('show');
-            document.body.style.backgroundColor = '#fff3cd';
-        }
-
-        startBtn.addEventListener('click', startTimer);
-        pauseBtn.addEventListener('click', pauseTimer);
-        resetBtn.addEventListener('click', resetTimer);
-
-        // 初始化倒计时模式
-        switchMode(true);
+        // 窗口大小变化时重新调整
+        window.addEventListener('resize', function() {
+            const iframe = document.getElementById('contentIframe');
+            if (iframe.src) {
+                resizeIframe();
+            }
+        });
     </script>
 </body>
 </html>

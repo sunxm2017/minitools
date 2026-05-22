@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>正方形场地 十字路 磁吸+纠错+SVG括号</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            padding: 20px;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        h3 {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #222;
+        }
+        .tip-desc {
+            text-align: center;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        .main-wrap {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 35px;
+        }
+        .main-box {
+            width: 100%;
+            height: 100%;
+            border: 2px solid #999;
+            position: relative;
+        }
+        .field {
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            border: 3px solid #222;
+        }
+        .road-h {
+            position: absolute;
+            left: 0;
+            top: 112.5px;
+            width: 100%;
+            height: 75px;
+            background: #a0522d;
+        }
+        .road-v {
+            position: absolute;
+            left: 112.5px;
+            top: 0;
+            width: 75px;
+            height: 100%;
+            background: #a0522d;
+        }
+        .grass {
+            position: absolute;
+            width: 112.5px;
+            height: 112.5px;
+            background: #7ccd7c;
+            border: 2px solid #228b22;
+            touch-action: none;
+            user-select: none;
+            cursor: grab;
+            z-index: 10;
+        }
+        .g1 { left: 0; top: 0; }
+        .g2 { right: 0; top: 0; }
+        .g3 { left: 0; bottom: 0; }
+        .g4 { right: 0; bottom: 0; }
+
+        .join-wrap {
+            position: relative;
+            width: 225px;
+            height: 225px;
+            margin: 0 auto 25px;
+        }
+        .join-container {
+            width: 100%;
+            height: 100%;
+            border: 2px dashed #e67e22;
+            position: relative;
+        }
+        .dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff6700;
+            border-radius: 50%;
+        }
+        .d1 { left: 0; top: 0; }
+        .d2 { left: 112.5px; top: 0; }
+        .d3 { left: 0; top: 112.5px; }
+        .d4 { left: 112.5px; top: 112.5px; }
+
+        svg {
+            position: absolute;
+            fill: none;
+            stroke: #d00;
+            stroke-width: 3;
+        }
+        .label {
+            position: absolute;
+            font-size: 15px;
+            font-weight: bold;
+            color: #d00;
+            white-space: nowrap;
+        }
+
+        .svg-left-origin { left: -30px; top: 0; }
+        .lab-left-origin { left: -65px; top: 135px; }
+        .svg-bottom-origin { left: 0; bottom: -30px; }
+        .lab-bottom-origin { left: 85px; bottom: -55px; }
+
+        .svg-left-join { left: -25px; top: 0; }
+        .lab-left-join { left: -60px; top: 95px; }
+        .svg-bottom-join { left: 0; bottom: -25px; }
+        .lab-bottom-join { left: 60px; bottom: -50px; }
+
+        .btn-wrap {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+        button {
+            padding: 7px 18px;
+            font-size: 15px;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            cursor: pointer;
+        }
+        #btnJoin { background: #27ae60; }
+        #btnReset { background: #e74c3c; }
+        #btnShowAll { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        #btnShowAll:hover:not(:disabled) { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        #btnShowAll:disabled { 
+            background: #95a5a6; 
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+        }
+
+        .explain {
+            margin: 10px auto;
+            padding: 12px;
+            background: #f0f8ff;
+            border-radius: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+        }
+        .calc-text {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #c0392b;
+            line-height: 1.6;
+            margin: 8px 0;
+        }
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 30px;
+            background: #fff;
+            border: 3px solid #27ae60;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 999;
+            display: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .answer-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .answer-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h3>正方形场地 （边长8m，路宽2m）</h3>
+    <div class="tip-desc">1.方形绿地中间路 求路的面积<br>2.求绿地的面积</div>
+
+    <div class="main-wrap">
+        <div class="main-box">
+            <div class="field"></div>
+            <div class="road-h"></div>
+            <div class="road-v"></div>
+            <div class="grass g1" id="g1"></div>
+            <div class="grass g2" id="g2"></div>
+            <div class="grass g3" id="g3"></div>
+            <div class="grass g4" id="g4"></div>
+        </div>
+        <svg class="svg-left-origin hidden" id="svgLeftOrigin" width="20" height="300">
+            <path d="M 18 0 Q 5 150 18 300" />
+        </svg>
+        <div class="label lab-left-origin hidden" id="labLeftOrigin">原边长：8 米</div>
+        <svg class="svg-bottom-origin hidden" id="svgBottomOrigin" width="300" height="20">
+            <path d="M 0 2 Q 150 15 300 2" />
+        </svg>
+        <div class="label lab-bottom-origin hidden" id="labBottomOrigin">原边长：8 米</div>
+    </div>
+
+    <div class="btn-wrap">
+        <button id="btnShowAll" disabled>显示解答步骤 (60秒)</button>
+        <button id="btnJoin">一键拼接</button>
+        <button id="btnReset">恢复原图</button>
+    </div>
+
+    <div class="join-wrap hidden" id="joinWrap">
+        <div class="join-container" id="joinBox">
+            <div class="dot d1"></div>
+            <div class="dot d2"></div>
+            <div class="dot d3"></div>
+            <div class="dot d4"></div>
+        </div>
+        <svg class="svg-left-join" width="20" height="225">
+            <path d="M 18 0 Q 5 112 18 225" />
+        </svg>
+        <div class="label lab-left-join">新边长：6 米</div>
+        <svg class="svg-bottom-join" width="225" height="20">
+            <path d="M 0 2 Q 112 15 225 20" />
+        </svg>
+        <div class="label lab-bottom-join">新边长：6 米</div>
+    </div>
+
+    <div class="explain hidden" id="explainBox">
+        <strong>【题型分析】</strong>这是一道典型的图形面积计算应用题，考察"平移法"在几何问题中的应用。<br><br>
+        <strong>【解题思路】</strong>利用平移法，将分散的四块绿地向中心平移靠拢，去掉道路后可拼成一个完整的新正方形：<br>
+        1. 道路宽度：2 米<br>
+        2. 新正方形边长：8 − 2 = 6（米）<br>
+        <div class="hidden" id="answerBox">
+        3. 绿地总面积：6 × 6 = 36（平方米）<br>
+        4. 道路面积：8 × 8 − 36 = 28（平方米）
+        </div>
+        <button id="btnShowAnswer" class="answer-btn hidden">查看答案</button>
+    </div>
+
+    <div class="calc-text hidden" id="result"></div>
+    <div class="modal" id="tipModal">全部拖拽完成，拼接成功！</div>
+
+<script>
+    const grassList = [g1, g2, g3, g4];
+    const btnJoin = document.getElementById('btnJoin');
+    const btnReset = document.getElementById('btnReset');
+    const btnShowAll = document.getElementById('btnShowAll');
+    const result = document.getElementById('result');
+    const mainBox = document.querySelector('.main-box');
+    const joinBox = document.getElementById('joinBox');
+    const joinWrap = document.getElementById('joinWrap');
+    const explainBox = document.getElementById('explainBox');
+    const answerBox = document.getElementById('answerBox');
+    const btnShowAnswer = document.getElementById('btnShowAnswer');
+    const tipModal = document.getElementById('tipModal');
+
+    // 显示解答步骤按钮（合并拖拽区域和解题思路）
+    btnShowAll.addEventListener('click', function() {
+        // 显示拖拽区域
+        joinWrap.classList.remove('hidden');
+        // 显示原图旁边的标签和路径
+        document.getElementById('svgLeftOrigin').classList.remove('hidden');
+        document.getElementById('labLeftOrigin').classList.remove('hidden');
+        document.getElementById('svgBottomOrigin').classList.remove('hidden');
+        document.getElementById('labBottomOrigin').classList.remove('hidden');
+        // 显示解题思路（不显示答案）
+        explainBox.classList.remove('hidden');
+        btnShowAnswer.classList.remove('hidden');
+        
+        btnShowAll.innerHTML = '已显示解答';
+        btnShowAll.disabled = true;
+    });
+
+    // 页面加载后自动开始60秒倒计时
+    function startCountdown() {
+        const countdownSeconds = 60;
+        let remainingSeconds = countdownSeconds;
+        
+        const countdownInterval = setInterval(function() {
+            if (remainingSeconds > 0) {
+                btnShowAll.innerHTML = `显示解答步骤 (${remainingSeconds}秒)`;
+                remainingSeconds--;
+            } else {
+                clearInterval(countdownInterval);
+                btnShowAll.disabled = false;
+                btnShowAll.innerHTML = '显示解答步骤';
+            }
+        }, 1000);
+    }
+    
+    // 页面加载完成后开始倒计时
+    window.addEventListener('load', function() {
+        startCountdown();
+    });
+
+    // 查看答案按钮
+    btnShowAnswer.addEventListener('click', function() {
+        answerBox.classList.remove('hidden');
+        btnShowAnswer.classList.add('hidden');
+    });
+
+    const cell = 112.5;
+    const fixPoints = [
+        {x: 0, y: 0},
+        {x: cell, y: 0},
+        {x: 0, y: cell},
+        {x: cell, y: cell}
+    ];
+    const originPos = [
+        {x: 0, y: 0},
+        {x: 187.5, y: 0},
+        {x: 0, y: 187.5},
+        {x: 187.5, y: 187.5}
+    ];
+
+    let dragItem = null;
+    let offsetX = 0, offsetY = 0; // 修正偏移用
+    let placed = [];
+    let completeNum = 0;
+    const SNAP_DIST = 30; // 磁吸距离
+
+    function getTouchPos(e) {
+        return e.touches ? e.touches[0] : e;
+    }
+
+    grassList.forEach(item => {
+        item.addEventListener('mousedown', dragStart);
+        item.addEventListener('touchstart', dragStart);
+    });
+    document.addEventListener('mousemove', dragMove);
+    document.addEventListener('touchmove', dragMove);
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchend', dragEnd);
+
+    function dragStart(e) {
+        e.preventDefault();
+        dragItem = this;
+        const p = getTouchPos(e);
+        const rect = dragItem.getBoundingClientRect();
+        // 关键：算鼠标/手指在图形内部的偏移，解决错位
+        offsetX = p.clientX - rect.left;
+        offsetY = p.clientY - rect.top;
+        dragItem.style.zIndex = 20;
+    }
+
+    function dragMove(e) {
+        if (!dragItem) return;
+        e.preventDefault();
+        const p = getTouchPos(e);
+        const parentRect = dragItem.parentElement.getBoundingClientRect();
+        // 用偏移量修正位置，鼠标跟图形不会错位
+        const left = p.clientX - parentRect.left - offsetX;
+        const top = p.clientY - parentRect.top - offsetY;
+        dragItem.style.left = left + 'px';
+        dragItem.style.top = top + 'px';
+    }
+
+    function dragEnd() {
+        if (!dragItem) return;
+        dragItem.style.zIndex = 10;
+        const joinRect = joinBox.getBoundingClientRect();
+        const itemRect = dragItem.getBoundingClientRect();
+
+        const inBox = itemRect.left >= joinRect.left - 10 &&
+                      itemRect.right <= joinRect.right + 10 &&
+                      itemRect.top >= joinRect.top - 10 &&
+                      itemRect.bottom <= joinRect.bottom + 10;
+
+        const relX = itemRect.left - joinRect.left;
+        const relY = itemRect.top - joinRect.top;
+
+        let nearest = null;
+        let minDist = 9999;
+        for (let i = 0; i < fixPoints.length; i++) {
+            if (placed.includes(i)) continue;
+            const dx = relX - fixPoints[i].x;
+            const dy = relY - fixPoints[i].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = i;
+            }
+        }
+
+        // 磁吸 + 纠错：不在区域/太远离点 → 弹回原位
+        if (!inBox || nearest === null || minDist > SNAP_DIST) {
+            resetOne(dragItem);
+            dragItem = null;
+            return;
+        }
+
+        // 防重叠：这个点位已占 → 弹回
+        if (placed.includes(nearest)) {
+            resetOne(dragItem);
+            dragItem = null;
+            return;
+        }
+
+        // 吸附到位
+        placed.push(nearest);
+        dragItem.style.left = fixPoints[nearest].x + 'px';
+        dragItem.style.top = fixPoints[nearest].y + 'px';
+        joinBox.appendChild(dragItem);
+        completeNum++;
+
+        if (completeNum >= 4) {
+            showModal();
+        }
+        dragItem = null;
+    }
+
+    function resetOne(item) {
+        // 把单个绿地放回原始位置
+        const idx = grassList.indexOf(item);
+        if (idx === -1) return;
+        mainBox.appendChild(item);
+        item.style.left = originPos[idx].x + 'px';
+        item.style.top = originPos[idx].y + 'px';
+    }
+
+    function showModal() {
+        tipModal.style.display = 'block';
+        setTimeout(() => {
+            tipModal.style.display = 'none';
+        }, 1500);
+    }
+
+    btnJoin.onclick = function () {
+        resetStatus();
+        completeNum = 4;
+        placed = [0,1,2,3];
+        grassList.forEach((item, idx) => {
+            joinBox.appendChild(item);
+            item.style.left = fixPoints[idx].x + 'px';
+            item.style.top = fixPoints[idx].y + 'px';
+        });
+        showModal();
+        calcArea();
+    };
+
+    btnReset.onclick = function () {
+        resetStatus();
+        grassList.forEach((item, idx) => {
+            mainBox.appendChild(item);
+            item.style.left = originPos[idx].x + 'px';
+            item.style.top = originPos[idx].y + 'px';
+        });
+        calcArea();
+    };
+
+    function resetStatus() {
+        completeNum = 0;
+        placed = [];
+    }
+
+    function calcArea() {
+        const side = 8;
+        const road = 2;
+        const total = side * side;
+        const newSide = side - road;
+        const remain = newSide * newSide;
+        result.innerHTML = `
+            场地总面积：${side} × ${side} = ${total} 平方米<br>
+            剩余绿地面积：${newSide} × ${newSide} = <b>${remain}</b> 平方米
+        `;
+    }
+
+    calcArea();
+</script>
+</body>
+</html>
