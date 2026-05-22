@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>正方形场地 十字路 磁吸+纠错+SVG括号</title>
+    <title>正方形场地 十字路 磁吸+纠错+SVG括号+手写功能</title>
     <style>
         * {
             margin: 0;
@@ -180,6 +180,7 @@
             gap: 12px;
             justify-content: center;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
         button {
             padding: 7px 18px;
@@ -205,6 +206,18 @@
             cursor: not-allowed;
             opacity: 0.6;
             box-shadow: none;
+        }
+
+        /* 新增：手写模式按钮样式 */
+        #btnDraw { 
+            background: #e67e22; 
+        }
+        #btnDraw.active { 
+            background: #d35400; 
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
+        }
+        #btnClearDraw { 
+            background: #7f8c8d; 
         }
 
         .explain {
@@ -313,6 +326,70 @@
         .answer-btn:hover {
             background: #2980b9;
         }
+
+        /* 新增：手写画布层样式 */
+        #drawLayer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000; /* 在最上层 */
+            pointer-events: none; /* 默认不拦截点击 */
+            touch-action: none;
+        }
+        #drawLayer.active {
+            pointer-events: auto; /* 开启时拦截事件 */
+            cursor: crosshair;
+        }
+        .draw-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 1001;
+            background: rgba(255,255,255,0.95);
+            padding: 10px 15px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: none; /* 默认隐藏 */
+        }
+        .draw-controls.visible {
+            display: flex;
+        }
+        .draw-controls button {
+            padding: 6px 14px;
+            font-size: 13px;
+        }
+        .color-picker {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .color-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        .color-btn.active {
+            border-color: #333;
+            transform: scale(1.2);
+        }
+        .brush-size {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #333;
+            font-size: 13px;
+        }
+        .brush-size input {
+            width: 60px;
+        }
     </style>
 </head>
 <body>
@@ -358,7 +435,34 @@
         <button id="btnShowAll" disabled>显示解答步骤 (60秒)</button>
         <button id="btnJoin">一键拼接</button>
         <button id="btnReset">恢复原图</button>
+        <!-- 新增：手写模式按钮 -->
+        <button id="btnDraw">✏️ 手写模式</button>
     </div>
+
+    <!-- 新增：手写控制面板（底部悬浮） -->
+    <div class="draw-controls" id="drawControls">
+        <div class="color-picker">
+            <div class="color-btn active" style="background:#d00" data-color="#d00"></div>
+            <div class="color-btn" style="background:#27ae60" data-color="#27ae60"></div>
+            <div class="color-btn" style="background:#3498db" data-color="#3498db"></div>
+            <div class="color-btn" style="background:#f39c12" data-color="#f39c12"></div>
+            <div class="color-btn" style="background:#8e44ad" data-color="#8e44ad"></div>
+            <div class="color-btn" style="background:#2c3e50" data-color="#2c3e50"></div>
+        </div>
+        <div class="brush-size">
+            <span>粗细:</span>
+            <input type="range" id="brushSize" min="1" max="10" value="3">
+            <span id="sizeValue">3px</span>
+        </div>
+        <button id="btnClearDraw">清除</button>
+        <button id="btnSaveDraw" style="background:#27ae60">保存</button>
+        <button id="btnCloseDraw" style="background:#e74c3c">关闭</button>
+    </div>
+
+    <!-- 新增：SVG 手写画布层 -->
+    <svg id="drawLayer" xmlns="http://www.w3.org/2000/svg">
+        <!-- 笔迹路径会动态添加到这里 -->
+    </svg>
 
     <div class="join-wrap hidden" id="joinWrap">
         <div class="join-container" id="joinBox">
@@ -381,9 +485,9 @@
         <strong>【题型分析】</strong>这是一道典型的图形面积计算应用题，考察"平移法"在几何问题中的应用。<br><br>
         <strong>【解题思路】</strong>利用平移法，将分散的四块绿地向中心平移靠拢，去掉道路后可拼成一个完整的新正方形：<br>
         1. 道路宽度：2 米<br>
-        2. 新正方形边长：8 − 2 = 6（米）<br>
+        2. 新正方形边长：8 − 2 = 6（米）<<br>
         <div class="hidden" id="answerBox">
-        3. 绿地总面积：6 × 6 = 36（平方米）<br>
+        3. 绿地总面积：6 × 6 = 36（平方米）<<br>
         4. 道路面积：8 × 8 − 36 = 28（平方米）
         </div>
         <button id="btnShowAnswer" class="answer-btn hidden">查看答案</button>
@@ -395,7 +499,7 @@
     <!-- 扩展题：长方形场地 -->
     <div class="extension-section hidden" id="extensionSection">
         <h3>📏 扩展题：长方形场地</h3>
-        <div class="tip-desc">已知长方形场地长10米，宽6米，中间有两条交叉的小路（横向路宽1米，纵向路宽2米）<br>1. 求小路的面积<br>2. 求绿地的面积</div>
+        <div class="tip-desc">已知长方形场地长10米，宽6米，中间有两条交叉的小路（横向路宽1米，纵向路宽2米）<<br>1. 求小路的面积<br>2. 求绿地的面积</div>
         
         <div class="main-wrap ext-wrap">
             <div class="main-box ext-box">
@@ -428,10 +532,10 @@
             <strong>【解题思路】</strong>同样使用平移法：<br>
             1. 横向道路宽度：1 米<br>
             2. 纵向道路宽度：2 米<br>
-            3. 新长方形的长：10 − 2 = 8（米）<br>
-            4. 新长方形的宽：6 − 1 = 5（米）<br>
+            3. 新长方形的长：10 − 2 = 8（米）<<br>
+            4. 新长方形的宽：6 − 1 = 5（米）<<br>
             <div class="hidden" id="extAnswerBox">
-            5. 绿地总面积：8 × 5 = 40（平方米）<br>
+            5. 绿地总面积：8 × 5 = 40（平方米）<<br>
             6. 道路面积：10 × 6 − 40 = 20（平方米）
             </div>
             <button id="btnExtAnswer" class="answer-btn">查看答案</button>
@@ -451,6 +555,24 @@
     const answerBox = document.getElementById('answerBox');
     const btnShowAnswer = document.getElementById('btnShowAnswer');
     const tipModal = document.getElementById('tipModal');
+
+    // 新增：手写功能相关变量
+    const drawLayer = document.getElementById('drawLayer');
+    const drawControls = document.getElementById('drawControls');
+    const btnDraw = document.getElementById('btnDraw');
+    const btnClearDraw = document.getElementById('btnClearDraw');
+    const btnSaveDraw = document.getElementById('btnSaveDraw');
+    const btnCloseDraw = document.getElementById('btnCloseDraw');
+    const brushSizeInput = document.getElementById('brushSize');
+    const sizeValue = document.getElementById('sizeValue');
+    const colorBtns = document.querySelectorAll('.color-btn');
+    
+    let isDrawing = false;
+    let isDrawMode = false;
+    let currentPath = null;
+    let currentColor = '#d00';
+    let currentWidth = 3;
+    let points = [];
 
     // 显示解答步骤按钮（合并拖拽区域和解题思路）
     btnShowAll.addEventListener('click', function() {
@@ -473,7 +595,7 @@
 
     // 页面加载后自动开始60秒倒计时
     function startCountdown() {
-        const countdownSeconds = 5;
+        const countdownSeconds = 60;
         let remainingSeconds = countdownSeconds;
         
         const countdownInterval = setInterval(function() {
@@ -541,6 +663,9 @@
     document.addEventListener('touchend', dragEnd);
 
     function dragStart(e) {
+        // 新增：如果手写模式开启，不触发拖拽
+        if (isDrawMode) return;
+        
         e.preventDefault();
         dragItem = this;
         const p = getTouchPos(e);
@@ -674,6 +799,149 @@
     }
 
     calcArea();
+
+    // ==================== 新增：手写功能代码 ====================
+    
+    // 切换手写模式
+    btnDraw.addEventListener('click', function() {
+        isDrawMode = !isDrawMode;
+        if (isDrawMode) {
+            btnDraw.classList.add('active');
+            btnDraw.textContent = '✏️ 手写中...';
+            drawLayer.classList.add('active');
+            drawControls.classList.add('visible');
+            // 禁用页面滚动（防止手写时页面滚动）
+            document.body.style.overflow = 'hidden';
+        } else {
+            closeDrawMode();
+        }
+    });
+
+    // 关闭手写模式
+    function closeDrawMode() {
+        isDrawMode = false;
+        btnDraw.classList.remove('active');
+        btnDraw.textContent = '✏️ 手写模式';
+        drawLayer.classList.remove('active');
+        drawControls.classList.remove('visible');
+        document.body.style.overflow = '';
+    }
+
+    btnCloseDraw.addEventListener('click', closeDrawMode);
+
+    // 颜色选择
+    colorBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            colorBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            currentColor = this.dataset.color;
+        });
+    });
+
+    // 笔刷粗细
+    brushSizeInput.addEventListener('input', function() {
+        currentWidth = this.value;
+        sizeValue.textContent = this.value + 'px';
+    });
+
+    // 清除笔迹
+    btnClearDraw.addEventListener('click', function() {
+        drawLayer.innerHTML = '';
+    });
+
+    // 保存为图片
+    btnSaveDraw.addEventListener('click', function() {
+        const svgData = new XMLSerializer().serializeToString(drawLayer);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        // 设置画布大小为窗口大小
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // 填充白色背景
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        img.onload = function() {
+            ctx.drawImage(img, 0, 0);
+            const link = document.createElement('a');
+            link.download = '手写笔记_' + new Date().getTime() + '.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+        
+        img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+    });
+
+    // 手写绘制逻辑（使用 SVG path）
+    function getDrawPos(e) {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    }
+
+    function startDrawing(e) {
+        if (!isDrawMode) return;
+        e.preventDefault();
+        isDrawing = true;
+        const pos = getDrawPos(e);
+        points = [pos];
+        
+        // 创建新的 path 元素
+        currentPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        currentPath.setAttribute('stroke', currentColor);
+        currentPath.setAttribute('stroke-width', currentWidth);
+        currentPath.setAttribute('stroke-linecap', 'round');
+        currentPath.setAttribute('stroke-linejoin', 'round');
+        currentPath.setAttribute('fill', 'none');
+        currentPath.setAttribute('d', `M ${pos.x} ${pos.y}`);
+        
+        drawLayer.appendChild(currentPath);
+    }
+
+    function moveDrawing(e) {
+        if (!isDrawMode || !isDrawing) return;
+        e.preventDefault();
+        const pos = getDrawPos(e);
+        points.push(pos);
+        
+        // 使用简单的线段连接，也可以改用贝塞尔曲线使线条更平滑
+        let d = `M ${points[0].x} ${points[0].y}`;
+        for (let i = 1; i < points.length; i++) {
+            d += ` L ${points[i].x} ${points[i].y}`;
+        }
+        currentPath.setAttribute('d', d);
+    }
+
+    function endDrawing() {
+        isDrawing = false;
+        currentPath = null;
+        points = [];
+    }
+
+    // 绑定手写事件到 drawLayer
+    drawLayer.addEventListener('mousedown', startDrawing);
+    drawLayer.addEventListener('mousemove', moveDrawing);
+    drawLayer.addEventListener('mouseup', endDrawing);
+    drawLayer.addEventListener('mouseleave', endDrawing);
+    
+    drawLayer.addEventListener('touchstart', startDrawing, { passive: false });
+    drawLayer.addEventListener('touchmove', moveDrawing, { passive: false });
+    drawLayer.addEventListener('touchend', endDrawing);
+    drawLayer.addEventListener('touchcancel', endDrawing);
+
+    // 窗口大小改变时调整 SVG 画布大小
+    window.addEventListener('resize', function() {
+        drawLayer.setAttribute('width', window.innerWidth);
+        drawLayer.setAttribute('height', window.innerHeight);
+    });
+    // 初始化 SVG 大小
+    drawLayer.setAttribute('width', window.innerWidth);
+    drawLayer.setAttribute('height', window.innerHeight);
+
 </script>
 </body>
 </html>
