@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>任意页面使用手写功能</title>
+</head>
+<body>
+    <h1>随便什么页面内容</h1>
+    <p>这里可以是任何内容...</p>
+    
+    <!-- 触发按钮 -->
+    <button onclick="DrawModule.toggle()">✏️ 手写模式</button>
+    
+    <!-- 引入模块 -->
+    <script src="draw-module.js" charset="UTF-8"></script>
+
+    <script>
+        // 可选：自定义配置初始化
+        DrawModule.init({
+            defaultColor: '#27ae60',    // 默认绿色
+            defaultWidth: 5,            // 默认粗一点
+            colors: ['#d00', '#27ae60', '#3498db', '#f39c12', '#8e44ad', '#2c3e50'],   // 自定义颜色
+            controlsPosition: 'top'       // 控制面板放顶部
+        });
+    </script>
+</body>
+</html>
