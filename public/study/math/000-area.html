@@ -109,6 +109,48 @@
             stroke: #d00;
             stroke-width: 3;
         }
+        .size-label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        .size-label.horizontal {
+            top: -20px;
+            left: 10px;
+        }
+        .size-label.vertical {
+            top: 10px;
+            right: -35px;
+            flex-direction: column;
+        }
+        .size-label .line {
+            width: 100px;
+            height: 2px;
+            background-color: #333;
+        }
+        .size-label.vertical .line {
+            width: 2px;
+            height: 100px;
+        }
+        .size-label .text {
+            margin: 0 5px;
+        }
+        .size-label.vertical .text {
+            margin: 5px 0;
+        }
+        /* 扩展题尺寸标注 */
+        .size-label.ext-horizontal {
+            top: -35px;
+            left: 10px;
+        }
+        .size-label.ext-vertical {
+            top: 10px;
+            right: -55px;
+            flex-direction: column;
+        }
         .label {
             position: absolute;
             font-size: 15px;
@@ -289,6 +331,21 @@
             <path d="M 0 2 Q 150 15 300 2" />
         </svg>
         <div class="label lab-bottom-origin hidden" id="labBottomOrigin">原边长：8 米</div>
+        <!-- 尺寸标注 -->
+        <div class="size-label horizontal">
+            <span class="arrow-left">←</span>
+            <span class="line"></span>
+            <span class="text">8m</span>
+            <span class="line"></span>
+            <span class="arrow-right">→</span>
+        </div>
+        <div class="size-label vertical">
+            <span class="arrow-up">↑</span>
+            <span class="line"></span>
+            <span class="text">8m</span>
+            <span class="line"></span>
+            <span class="arrow-down">↓</span>
+        </div>
     </div>
 
     <div class="btn-wrap">
@@ -343,6 +400,21 @@
                 <div class="grass ext-g2"></div>
                 <div class="grass ext-g3"></div>
                 <div class="grass ext-g4"></div>
+                <!-- 长方形尺寸标注 -->
+                <div class="size-label ext-horizontal">
+                    <span class="arrow-left">←</span>
+                    <span class="line"></span>
+                    <span class="text">10m</span>
+                    <span class="line"></span>
+                    <span class="arrow-right">→</span>
+                </div>
+                <div class="size-label ext-vertical">
+                    <span class="arrow-up">↑</span>
+                    <span class="line"></span>
+                    <span class="text">6m</span>
+                    <span class="line"></span>
+                    <span class="arrow-down">↓</span>
+                </div>
             </div>
         </div>
         
