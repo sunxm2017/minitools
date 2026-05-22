@@ -192,6 +192,66 @@
         .hidden {
             display: none !important;
         }
+        /* 扩展题样式 */
+        .extension-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px dashed #ddd;
+        }
+        .ext-wrap {
+            width: 400px;
+            height: 260px;
+        }
+        .ext-box {
+            width: 350px;
+            height: 210px;
+        }
+        .ext-field {
+            width: 350px;
+            height: 210px;
+            background: #f8f8f8;
+        }
+        .ext-road-h {
+            width: 350px;
+            height: 17px;
+            top: 96px;
+            left: 0;
+            background: #d00;
+        }
+        .ext-road-v {
+            width: 33px;
+            height: 210px;
+            top: 0;
+            left: 158px;
+            background: #d00;
+        }
+        .ext-g1 {
+            width: 158px;
+            height: 96px;
+            top: 0;
+            left: 0;
+        }
+        .ext-g2 {
+            width: 159px;
+            height: 96px;
+            top: 0;
+            left: 191px;
+        }
+        .ext-g3 {
+            width: 158px;
+            height: 97px;
+            top: 113px;
+            left: 0;
+        }
+        .ext-g4 {
+            width: 159px;
+            height: 97px;
+            top: 113px;
+            left: 191px;
+        }
+        .ext-explain {
+            width: 380px;
+        }
         .answer-btn {
             margin-top: 10px;
             padding: 8px 16px;
@@ -269,6 +329,37 @@
     <div class="calc-text hidden" id="result"></div>
     <div class="modal" id="tipModal">全部拖拽完成，拼接成功！</div>
 
+    <!-- 扩展题：长方形场地 -->
+    <div class="extension-section hidden" id="extensionSection">
+        <h3>📏 扩展题：长方形场地</h3>
+        <div class="tip-desc">已知长方形场地长10米，宽6米，中间有两条交叉的小路（横向路宽1米，纵向路宽2米）<br>1. 求小路的面积<br>2. 求绿地的面积</div>
+        
+        <div class="main-wrap ext-wrap">
+            <div class="main-box ext-box">
+                <div class="field ext-field"></div>
+                <div class="road-h ext-road-h"></div>
+                <div class="road-v ext-road-v"></div>
+                <div class="grass ext-g1"></div>
+                <div class="grass ext-g2"></div>
+                <div class="grass ext-g3"></div>
+                <div class="grass ext-g4"></div>
+            </div>
+        </div>
+        
+        <div class="explain ext-explain">
+            <strong>【解题思路】</strong>同样使用平移法：<br>
+            1. 横向道路宽度：1 米<br>
+            2. 纵向道路宽度：2 米<br>
+            3. 新长方形的长：10 − 2 = 8（米）<br>
+            4. 新长方形的宽：6 − 1 = 5（米）<br>
+            <div class="hidden" id="extAnswerBox">
+            5. 绿地总面积：8 × 5 = 40（平方米）<br>
+            6. 道路面积：10 × 6 − 40 = 20（平方米）
+            </div>
+            <button id="btnExtAnswer" class="answer-btn">查看答案</button>
+        </div>
+    </div>
+
 <script>
     const grassList = [g1, g2, g3, g4];
     const btnJoin = document.getElementById('btnJoin');
@@ -295,6 +386,8 @@
         // 显示解题思路（不显示答案）
         explainBox.classList.remove('hidden');
         btnShowAnswer.classList.remove('hidden');
+        // 显示扩展题
+        document.getElementById('extensionSection').classList.remove('hidden');
         
         btnShowAll.innerHTML = '已显示解答';
         btnShowAll.disabled = true;
@@ -302,7 +395,7 @@
 
     // 页面加载后自动开始60秒倒计时
     function startCountdown() {
-        const countdownSeconds = 60;
+        const countdownSeconds = 5;
         let remainingSeconds = countdownSeconds;
         
         const countdownInterval = setInterval(function() {
@@ -326,6 +419,14 @@
     btnShowAnswer.addEventListener('click', function() {
         answerBox.classList.remove('hidden');
         btnShowAnswer.classList.add('hidden');
+    });
+
+    // 扩展题查看答案按钮
+    const btnExtAnswer = document.getElementById('btnExtAnswer');
+    const extAnswerBox = document.getElementById('extAnswerBox');
+    btnExtAnswer.addEventListener('click', function() {
+        extAnswerBox.classList.remove('hidden');
+        btnExtAnswer.classList.add('hidden');
     });
 
     const cell = 112.5;
