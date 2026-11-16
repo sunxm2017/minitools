@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>试卷去红变白 (背景平整/阴影熨烫版)</title>
+    <style>
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #eceff1; margin: 0; padding: 20px; text-align: center; }
+        .container { display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .controls { background: #fff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; align-items: center;}
+        button, .upload-btn { padding: 8px 16px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 6px; font-size: 14px; transition: 0.2s; display: flex; align-items: center; gap: 5px; font-weight: bold;}
+        button:hover, .upload-btn:hover { background: #f0f0f0; }
+        button.active { background: #007bff; color: white; border-color: #007bff; }
+        .upload-btn { background: #10b981; color: white; border: none;}
+        .upload-btn:hover { background: #059669; }
+        .reset-btn { background: #ef4444; color: white; border: none;}
+        .reset-btn:hover { background: #dc2626; }
+        
+        /* 画布容器 */
+        .canvas-container {
+            position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            border-radius: 4px; overflow: hidden; display: none;
+            background-color: #ffffff;
+        }
+        .canvas-container.transparent-mode {
+            background-color: #ffffff;
+            background-image: linear-gradient(45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(-45deg, #ccc 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #ccc 75%), 
+                              linear-gradient(-45deg, transparent 75%, #ccc 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        canvas { display: block; max-width: 100%; height: auto; cursor: default; }
+
+        input[type="file"] { display: none; }
+        .slider-group { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #555; }
+        input[type="range"] { width: 120px; }
+        
+        .paste-area {
+            border: 2px dashed #cbd5e1; border-radius: 8px; padding: 30px 40px;
+            background: #f8fafc; color: #64748b; font-size: 15px; transition: 0.3s; cursor: pointer;
+        }
+        .paste-area.highlight { border-color: #3b82f6; background: #eff6ff; color: #2563eb; }
+        .status { font-size: 13px; color: #059669; font-weight: bold; opacity: 0; transition: 0.3s; }
+        .status.show { opacity: 1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="controls">
+        <label class="upload-btn">
+            📂 选择图片
+            <input type="file" id="fileInput" accept="image/*">
+        </label>
+        
+        <button id="resetBtn" class="reset-btn">↺ 重置/重新加载</button>
+        
+        <button id="modeBtn" style="background:#6366f1; color:white; border:none;">💡 当前: 纯白底 (点击切透明)</button>
+        
+        <div class="slider-group">
+            <label>熨平强度:</label>
+            <input type="range" id="threshold" min="10" max="150" value="50">
+            <span id="threshVal">50</span>
+        </div>
+
+        <button id="toolEraser">🧽 白色橡皮擦</button>
+        <div class="slider-group">
+            <label>大小:</label>
+            <input type="range" id="size" min="5" max="100" value="20">
+        </div>
+    </div>
+    
+    <div class="paste-area" id="pasteArea">
+        点击此处，然后按 <b>Ctrl + V</b> 直接粘贴截图
+    </div>
+    <div class="status" id="statusMsg">处理成功！</div>
+
+    <canvas id="offCanvas" style="display:none;"></canvas>
+    
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="mainCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true, alpha: true });
+const offCanvas = document.getElementById('offCanvas');
+const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+
+const canvasContainer = document.getElementById('canvasContainer');
+const pasteArea = document.getElementById('pasteArea');
+const statusMsg = document.getElementById('statusMsg');
+const modeBtn = document.getElementById('modeBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+const fileInput = document.getElementById('fileInput');
+const toolEraser = document.getElementById('toolEraser');
+const sizeInput = document.getElementById('size');
+const thresholdInput = document.getElementById('threshold');
+const threshVal = document.getElementById('threshVal');
+
+let img = new Image();
+let isErasing = false;
+let drawing = false;
+let isTransparentMode = false;
+
+// 重置功能
+resetBtn.onclick = () => {
+    offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvasContainer.style.display = 'none';
+    pasteArea.style.display = 'block';
+    fileInput.value = '';
+    thresholdInput.value = 50;
+    threshVal.textContent = '50';
+    if (isTransparentMode) modeBtn.click(); // 恢复白底
+};
+
+// 模式切换
+modeBtn.onclick = () => {
+    isTransparentMode = !isTransparentMode;
+    if (isTransparentMode) {
+        modeBtn.textContent = '💡 当前: 透明底 (点击切白底)';
+        canvasContainer.classList.add('transparent-mode');
+    } else {
+        modeBtn.textContent = '💡 当前: 纯白底 (点击切透明)';
+        canvasContainer.classList.remove('transparent-mode');
+    }
+    if (canvas.width) processImage();
+};
+
+function loadImageToCanvas(source) {
+    img.onload = () => {
+        pasteArea.style.display = 'none';
+        canvasContainer.style.display = 'block';
+        
+        const maxWidth = 1600; // 限制处理分辨率，保证速度
+        let scale = 1;
+        if (img.width > maxWidth) scale = maxWidth / img.width;
+        
+        canvas.width = offCanvas.width = img.width * scale;
+        canvas.height = offCanvas.height = img.height * scale;
+        
+        offCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        processImage();
+        
+        statusMsg.classList.add('show');
+        setTimeout(() => statusMsg.classList.remove('show'), 2000);
+    };
+    img.src = source;
+}
+
+fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => loadImageToCanvas(event.target.result);
+    reader.readAsDataURL(file);
+};
+
+window.addEventListener('paste', (e) => {
+    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+            const blob = item.getAsFile();
+            const reader = new FileReader();
+            reader.onload = (event) => loadImageToCanvas(event.target.result);
+            reader.readAsDataURL(blob);
+            e.preventDefault();
+            return;
+        }
+    }
+});
+
+thresholdInput.oninput = (e) => {
+    threshVal.textContent = e.target.value;
+    if (canvas.width) processImage();
+};
+
+// 核心算法：背景估计与去阴影
+function processImage() {
+    if (!canvas.width) return;
+    
+    const width = canvas.width;
+    const height = canvas.height;
+    const imageData = offCtx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    
+    // 1. 生成灰度图并去除红笔
+    const grayData = new Float32Array(width * height);
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        let r = data[i], g = data[i + 1], b = data[i + 2];
+        
+        // 去红
+        if (r > 50 && r > g * 1.15 && r > b * 1.15 && (r - Math.max(g, b)) > 20) {
+            let grayRed = (g + b) / 2;
+            r = grayRed; g = grayRed; b = grayRed;
+        }
+        
+        // 转为感知亮度
+        grayData[j] = 0.299 * r + 0.587 * g + 0.114 * b;
+    }
+
+    // 2. 背景估计（计算局部极大值来估算阴影/光照）
+    // 这里的窗口越大，背景越平坦，但也越慢。我们用积分图来加速。
+    const blurRadius = 30; // 决定平滑阴影的半径
+    const integral = new Float32Array(width * height);
+    for (let y = 0; y < height; y++) {
+        let rowSum = 0;
+        for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            rowSum += grayData[idx];
+            if (y === 0) integral[idx] = rowSum;
+            else integral[idx] = integral[idx - width] + rowSum;
+        }
+    }
+
+    // 3. 动态阈值与平滑输出
+    const sensitivity = parseInt(thresholdInput.value); 
+    const whitePoint = 240 - (sensitivity * 0.4); 
+    const blackPoint = 30 + (sensitivity * 0.5);  
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            const idx = y * width + x;
+            const pixelIdx = idx * 4;
+            
+            // 计算局部背景亮度（窗口均值）
+            let x1 = Math.max(0, x - blurRadius);
+            let y1 = Math.max(0, y - blurRadius);
+            let x2 = Math.min(width - 1, x + blurRadius);
+            let y2 = Math.min(height - 1, y + blurRadius);
+            const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+            
+            let sum = integral[y2 * width + x2] 
+                    - (y1 > 0 ? integral[(y1 - 1) * width + x2] : 0)
+                    - (x1 > 0 ? integral[y2 * width + (x1 - 1)] : 0)
+                    + (y1 > 0 && x1 > 0 ? integral[(y1 - 1) * width + (x1 - 1)] : 0);
+            
+            let localBg = sum / count;
+            let originalGray = grayData[idx];
+
+            // 除法归一化：计算当前像素相对于局部背景的比例
+            // 如果 current 比 localBg 暗很多，说明是字
+            let ratio = 1.0;
+            if (localBg > 0) {
+                ratio = originalGray / localBg;
+            }
+
+            // 将 ratio 映射到 0-255 灰度
+            // 乘以255，这样原来的背景会变成 255，黑字依然黑
+            let normalizedGray = ratio * 255;
+            
+            // 平滑对比度拉伸
+            let newGray = 0;
+            if (normalizedGray >= whitePoint) {
+                newGray = 255;
+            } else if (normalizedGray <= blackPoint) {
+                newGray = 0;
+            } else {
+                let r = (normalizedGray - blackPoint) / (whitePoint - blackPoint);
+                newGray = Math.pow(r, 1.2) * 255;
+            }
+
+            // 赋值处理 (透明模式或白底模式)
+            if (isTransparentMode) {
+                let distanceToWhite = 255 - newGray;
+                if (distanceToWhite < sensitivity) {
+                    data[pixelIdx + 3] = 0; // 透明
+                } else {
+                    data[pixelIdx + 3] = 255; // 不透明
+                    data[pixelIdx] = 0; data[pixelIdx + 1] = 0; data[pixelIdx + 2] = 0;
+                }
+            } else {
+                data[pixelIdx] = newGray;
+                data[pixelIdx + 1] = newGray;
+                data[pixelIdx + 2] = newGray;
+                data[pixelIdx + 3] = 255;
+            }
+        }
+    }
+    
+    ctx.clearRect(0, 0, width, height);
+    // 注意：如果是白底模式，背景直接用 normalizedGray 填充，不需要另画白底
+    ctx.putImageData(imageData, 0, 0);
+}
+
+document.getElementById('processBtn').onclick = processImage;
+
+// 橡皮擦
+toolEraser.onclick = () => {
+    isErasing = !isErasing;
+    toolEraser.classList.toggle('active', isErasing);
+    canvas.style.cursor = isErasing ? 'cell' : 'default';
+};
+
+canvas.onpointerdown = (e) => {
+    if (!isErasing) return;
+    drawing = true;
+    drawWhite(e);
+};
+canvas.onpointermove = (e) => {
+    if (!drawing || !isErasing) return;
+    drawWhite(e);
+};
+canvas.onpointerup = () => drawing = false;
+canvas.onpointerleave = () => drawing = false;
+
+function drawWhite(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    const size = parseInt(sizeInput.value) * scaleX;
+
+    if (isTransparentMode) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.fillStyle = 'rgba(0,0,0,1)';
+    } else {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#ffffff';
+    }
+    
+    ctx.beginPath();
+    ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+    ctx.fill();
+}
+</script>
+</body>
+</html>
