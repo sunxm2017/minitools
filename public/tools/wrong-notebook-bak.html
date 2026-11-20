@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>错题本</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'SimSun', 'Songti SC', serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #45a049;
+        }
+        
+        .btn-danger {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #da190b;
+        }
+        
+        .btn-print {
+            background-color: #2196F3;
+            color: white;
+        }
+        
+        .btn-print:hover {
+            background-color: #1976D2;
+        }
+        
+        .paste-hint {
+            background-color: #fff3e0;
+            border: 1px solid #ffb74d;
+            border-radius: 4px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #e65100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .editor-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        /* 12×8cm 编辑区域 */
+        .editor-wrapper {
+            width: 454px;  /* 120mm ≈ 453.54px */
+            height: 303px; /* 80mm ≈ 302.36px */
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 4px;
+            padding: 22px; /* 6mm ≈ 22.68px */
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+        
+        .editor-area {
+            width: 100%;
+            height: 100%;
+            min-height: 259px;
+            outline: none;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .editor-area:empty:before {
+            content: attr(placeholder);
+            color: #999;
+            pointer-events: none;
+        }
+        
+        .editor-area img {
+            max-width: 100%;
+            height: auto;
+            margin: 3px 0;
+            border-radius: 2px;
+        }
+        
+        /* 可拖拽图片容器 */
+        .draggable-image {
+            position: absolute;
+            cursor: move;
+            border: 2px solid #4CAF50;
+            border-radius: 4px;
+            overflow: hidden;
+            min-width: 50px;
+            min-height: 50px;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        
+        .draggable-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .draggable-image:hover {
+            border-color: #2E7D32;
+        }
+        
+        /* 调整大小手柄 */
+        .resize-handle {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            cursor: nwse-resize;
+            right: -7px;
+            bottom: -7px;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        /* 删除按钮 */
+        .remove-image-btn {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            z-index: 11;
+        }
+        
+        .remove-image-btn:hover {
+            background-color: #d32f2f;
+        }
+        
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .错题列表 {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .错题卡片 {
+            width: 454px;
+            height: 303px;
+            background-color: #fff;
+            border: 1px solid #000;
+            border-radius: 4px;
+            padding: 22px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .错题卡片 .actions {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            z-index: 5;
+        }
+        
+        .错题卡片 .delete-btn {
+            color: #f44336;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 4px;
+        }
+        
+        .错题卡片 .question {
+            color: #333;
+            font-size: 14px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            height: 200px;
+            overflow-y: auto;
+        }
+        
+        .answer-line {
+            border-top: 1px solid #ccc;
+            padding-top: 8px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .print-area {
+            display: none;
+        }
+        
+        /* 打印样式 */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 297mm;
+                height: 210mm;
+            }
+            
+            .header,
+            .controls,
+            .paste-hint,
+            .editor-section,
+            .错题列表,
+            .container {
+                display: none !important;
+            }
+            
+            .print-area {
+                display: block !important;
+                width: 297mm;
+                height: 210mm;
+                margin: 0;
+                padding: 0;
+            }
+            
+            @page {
+                size: landscape;
+                margin: 0;
+            }
+            
+            .print-sheet {
+                width: 297mm;
+                height: 210mm;
+                page-break-after: always;
+                position: relative;
+                background-color: white;
+            }
+            
+            .print-sheet:last-child {
+                page-break-after: avoid;
+            }
+            
+            /* 装订线 */
+            .binding-line {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 8mm;
+                height: 210mm;
+                background-color: #f5f5f5;
+                border-right: 2px dashed #999;
+            }
+            
+            /* 卡片容器 */
+            .cards-container {
+                position: absolute;
+                left: 10mm;
+                top: 15mm;
+                width: 277mm;
+                height: 180mm;
+            }
+            
+            .cards-row {
+                display: flex;
+                justify-content: center;
+                gap: 17mm;
+                margin-bottom: 20mm;
+            }
+            
+            .print-card {
+                width: 120mm;
+                height: 80mm;
+                border: 1px solid #000;
+                padding: 6mm;
+                background-color: white;
+                position: relative;
+                box-sizing: border-box;
+                overflow: hidden;
+            }
+            
+            .print-card .card-content {
+                font-size: 9pt;
+                color: #000;
+                line-height: 1.5;
+                white-space: pre-wrap;
+                font-family: 'SimSun', 'Songti SC', serif;
+                height: 55mm;
+                overflow: hidden;
+            }
+            
+            .print-card .card-content img {
+                object-fit: contain;
+                margin: 2px;
+                max-width: none !important;
+                max-height: none !important;
+            }
+            
+            .print-card .answer-line {
+                border-top: 1px solid #ccc;
+                padding-top: 2mm;
+                margin-top: 4mm;
+                font-size: 8pt;
+                color: #333;
+            }
+            
+            /* 裁剪标记 */
+            .crop-marks {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                pointer-events: none;
+            }
+            
+            .crop-mark {
+                position: absolute;
+                width: 5mm;
+                height: 5mm;
+                border-left: 1px solid #666;
+                border-top: 1px solid #666;
+            }
+            
+            .crop-mark-tl { top: 14mm; left: 9mm; }
+            .crop-mark-tr { top: 14mm; right: 10mm; }
+            .crop-mark-bl { bottom: 14mm; left: 9mm; }
+            .crop-mark-br { bottom: 14mm; right: 10mm; }
+            .crop-mark-tc { top: 14mm; left: calc(50% - 1mm); width: 2mm; height: 5mm; }
+            .crop-mark-bc { bottom: 14mm; left: calc(50% - 1mm); width: 2mm; height: 5mm; }
+            .crop-mark-cl { top: calc(50% - 1mm); left: 9mm; width: 5mm; height: 2mm; }
+            .crop-mark-cr { top: calc(50% - 1mm); right: 10mm; width: 5mm; height: 2mm; }
+            
+            /* 分割线 */
+            .dividers {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                pointer-events: none;
+            }
+            
+            .h-divider {
+                position: absolute;
+                left: 8mm;
+                right: 0;
+                top: calc(50%);
+                height: 1px;
+                background-color: #ddd;
+            }
+            
+            .v-divider {
+                position: absolute;
+                left: calc(50%);
+                top: 0;
+                bottom: 0;
+                width: 1px;
+                background-color: #ddd;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📝 错题本</h1>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-danger" onclick="clearAll()">🗑️ 清空全部</button>
+            <button class="btn btn-print" onclick="printPage()">🖨️ 打印</button>
+        </div>
+        
+        <div class="paste-hint">
+            <span class="icon">📋</span>
+            <span>在下方编辑框中输入题目，按 Ctrl+V 粘贴图片，图片可拖拽移动</span>
+        </div>
+        
+        <div class="editor-section">
+            <div class="editor-wrapper" id="editorWrapper">
+                <div class="editor-area" id="editorArea" contenteditable="true" placeholder="输入错题内容..."></div>
+            </div>
+            <div class="editor-actions">
+                <button class="btn btn-primary" onclick="addQuestion()">✓ 添加错题</button>
+            </div>
+        </div>
+        
+        <div class="错题列表" id="错题列表"></div>
+    </div>
+    
+    <div class="print-area" id="printArea"></div>
+    
+    <script>
+        let 错题列表 = [];
+        let draggedElement = null;
+        let resizeElement = null;
+        let startX, startY, startWidth, startHeight;
+        
+        function loadData() {
+            const saved = localStorage.getItem('wrongNotebook');
+            if (saved) {
+                错题列表 = JSON.parse(saved);
+            }
+            renderList();
+        }
+        
+        function saveData() {
+            localStorage.setItem('wrongNotebook', JSON.stringify(错题列表));
+        }
+        
+        function renderList() {
+            const container = document.getElementById('错题列表');
+            container.innerHTML = 错题列表.map(item => `
+                <div class="错题卡片" data-id="${item.id}">
+                    <div class="actions">
+                        <span class="delete-btn" onclick="deleteQuestion(${item.id})">✕</span>
+                    </div>
+                    <div class="question">${item.content || ''}</div>
+                    <div class="answer-line">答案：________________________</div>
+                </div>
+            `).join('');
+        }
+        
+        function addQuestion() {
+            const editor = document.getElementById('editorArea');
+            const editorWrapper = document.getElementById('editorWrapper');
+            const textContent = editor.innerText.trim();
+            const hasImages = editor.querySelector('img') !== null || editorWrapper.querySelector('.draggable-image') !== null;
+            
+            if (!textContent && !hasImages) {
+                alert('请输入题目内容或添加图片');
+                return;
+            }
+            
+            // 获取拖拽图片数据
+            const draggableImages = document.querySelectorAll('.editor-wrapper .draggable-image');
+            let finalContent = editor.innerHTML;
+            
+            // 将拖拽图片转换为带样式的img标签添加到内容中
+            draggableImages.forEach(imgContainer => {
+                const img = imgContainer.querySelector('img');
+                const top = parseInt(imgContainer.style.top) || 20;
+                const left = parseInt(imgContainer.style.left) || 20;
+                const width = parseInt(imgContainer.style.width) || 100;
+                const height = parseInt(imgContainer.style.height) || 75;
+                
+                const styledImg = `<img src="${img.src}" style="position:absolute; top:${top}px; left:${left}px; width:${width}px; height:${height}px; object-fit:contain;">`;
+                finalContent += styledImg;
+            });
+            
+            // 获取纯文本内容
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = finalContent;
+            const imgs = tempDiv.querySelectorAll('img');
+            imgs.forEach((img, idx) => {
+                img.replaceWith(`[图片${idx + 1}]`);
+            });
+            const textContentOnly = tempDiv.innerText;
+            
+            const newItem = {
+                id: Date.now(),
+                content: finalContent,
+                textContent: textContentOnly
+            };
+            
+            错题列表.push(newItem);
+            saveData();
+            renderList();
+            
+            // 清空编辑器
+            editor.innerHTML = '';
+            draggableImages.forEach(img => img.remove());
+        }
+        
+        function deleteQuestion(id) {
+            if (confirm('确定删除这道错题？')) {
+                错题列表 = 错题列表.filter(item => item.id !== id);
+                saveData();
+                renderList();
+            }
+        }
+        
+        function clearAll() {
+            if (confirm('确定清空所有错题？')) {
+                错题列表 = [];
+                saveData();
+                renderList();
+            }
+        }
+        
+        function printPage() {
+            generatePrintSheet();
+            window.print();
+        }
+        
+        function generatePrintSheet() {
+            const printArea = document.getElementById('printArea');
+            printArea.innerHTML = '';
+            
+            const itemsPerPage = 4;
+            const totalPages = Math.ceil(错题列表.length / itemsPerPage);
+            
+            for (let page = 0; page < totalPages; page++) {
+                const startIndex = page * itemsPerPage;
+                
+                const printSheet = document.createElement('div');
+                printSheet.className = 'print-sheet';
+                
+                const bindingLine = document.createElement('div');
+                bindingLine.className = 'binding-line';
+                printSheet.appendChild(bindingLine);
+                
+                const cropMarks = document.createElement('div');
+                cropMarks.className = 'crop-marks';
+                cropMarks.innerHTML = `
+                    <span class="crop-mark crop-mark-tl"></span>
+                    <span class="crop-mark crop-mark-tr"></span>
+                    <span class="crop-mark crop-mark-bl"></span>
+                    <span class="crop-mark crop-mark-br"></span>
+                    <span class="crop-mark crop-mark-tc"></span>
+                    <span class="crop-mark crop-mark-bc"></span>
+                    <span class="crop-mark crop-mark-cl"></span>
+                    <span class="crop-mark crop-mark-cr"></span>
+                `;
+                printSheet.appendChild(cropMarks);
+                
+                const dividers = document.createElement('div');
+                dividers.className = 'dividers';
+                dividers.innerHTML = `
+                    <div class="h-divider"></div>
+                    <div class="v-divider"></div>
+                `;
+                printSheet.appendChild(dividers);
+                
+                const cardsContainer = document.createElement('div');
+                cardsContainer.className = 'cards-container';
+                
+                const row1 = document.createElement('div');
+                row1.className = 'cards-row';
+                
+                const row2 = document.createElement('div');
+                row2.className = 'cards-row';
+                
+                for (let i = 0; i < 4; i++) {
+                    const globalIndex = startIndex + i;
+                    const item = globalIndex < 错题列表.length ? 错题列表[globalIndex] : null;
+                    
+                    const card = document.createElement('div');
+                    card.className = 'print-card';
+                    card.innerHTML = `
+                        <div class="card-content">${item ? item.content : ''}</div>
+                        ${item ? '<div class="answer-line">答案：________________________</div>' : ''}
+                    `;
+                    
+                    if (i < 2) {
+                        row1.appendChild(card);
+                    } else {
+                        row2.appendChild(card);
+                    }
+                }
+                
+                cardsContainer.appendChild(row1);
+                cardsContainer.appendChild(row2);
+                printSheet.appendChild(cardsContainer);
+                
+                printArea.appendChild(printSheet);
+            }
+        }
+        
+        // 粘贴图片处理
+        document.addEventListener('paste', async (e) => {
+            const editor = document.getElementById('editorArea');
+            const editorWrapper = document.getElementById('editorWrapper');
+            
+            if (!editor.contains(document.activeElement) && !editorWrapper.contains(document.activeElement)) return;
+            
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const blob = item.getAsFile();
+                    const url = URL.createObjectURL(blob);
+                    
+                    // 创建临时img获取原始尺寸
+                    const tempImg = new Image();
+                    tempImg.onload = function() {
+                        // 获取原始尺寸，最大限制为编辑区域大小
+                        let imgWidth = tempImg.width;
+                        let imgHeight = tempImg.height;
+                        const maxWidth = editorWrapper.offsetWidth - 40;
+                        const maxHeight = editorWrapper.offsetHeight - 40;
+                        
+                        // 如果图片太大，按比例缩小到合适大小
+                        if (imgWidth > maxWidth) {
+                            const ratio = maxWidth / imgWidth;
+                            imgWidth = maxWidth;
+                            imgHeight = Math.round(imgHeight * ratio);
+                        }
+                        if (imgHeight > maxHeight) {
+                            const ratio = maxHeight / imgHeight;
+                            imgHeight = maxHeight;
+                            imgWidth = Math.round(imgWidth * ratio);
+                        }
+                        
+                        // 创建可拖拽图片容器，使用原始尺寸
+                        const imgContainer = document.createElement('div');
+                        imgContainer.className = 'draggable-image';
+                        imgContainer.style.top = '20px';
+                        imgContainer.style.left = '20px';
+                        imgContainer.style.width = imgWidth + 'px';
+                        imgContainer.style.height = imgHeight + 'px';
+                        
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'contain';
+                        
+                        const resizeHandle = document.createElement('div');
+                        resizeHandle.className = 'resize-handle';
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-image-btn';
+                        removeBtn.innerHTML = '✕';
+                        removeBtn.onclick = function() {
+                            imgContainer.remove();
+                        };
+                        
+                        imgContainer.appendChild(img);
+                        imgContainer.appendChild(resizeHandle);
+                        imgContainer.appendChild(removeBtn);
+                        
+                        editorWrapper.appendChild(imgContainer);
+                        
+                        // 添加拖拽和调整大小功能
+                        initDragAndResize(imgContainer);
+                    };
+                    tempImg.src = url;
+                }
+            }
+        });
+        
+        // 初始化拖拽和调整大小
+        function initDragAndResize(element) {
+            const resizeHandle = element.querySelector('.resize-handle');
+            
+            // 拖拽
+            element.addEventListener('mousedown', function(e) {
+                if (e.target === resizeHandle) return;
+                
+                draggedElement = element;
+                startX = e.clientX - element.offsetLeft;
+                startY = e.clientY - element.offsetTop;
+                
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('mouseup', stopDrag);
+                
+                e.preventDefault();
+            });
+            
+            // 调整大小
+            resizeHandle.addEventListener('mousedown', function(e) {
+                resizeElement = element;
+                startX = e.clientX;
+                startY = e.clientY;
+                startWidth = parseInt(element.style.width) || 100;
+                startHeight = parseInt(element.style.height) || 75;
+                
+                document.addEventListener('mousemove', onResize);
+                document.addEventListener('mouseup', stopResize);
+                
+                e.preventDefault();
+            });
+        }
+        
+        function onDrag(e) {
+            if (!draggedElement) return;
+            
+            const editorWrapper = document.getElementById('editorWrapper');
+            const maxX = editorWrapper.offsetWidth - draggedElement.offsetWidth;
+            const maxY = editorWrapper.offsetHeight - draggedElement.offsetHeight;
+            
+            let newX = e.clientX - startX;
+            let newY = e.clientY - startY;
+            
+            newX = Math.max(0, Math.min(newX, maxX));
+            newY = Math.max(0, Math.min(newY, maxY));
+            
+            draggedElement.style.left = newX + 'px';
+            draggedElement.style.top = newY + 'px';
+        }
+        
+        function stopDrag() {
+            draggedElement = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+        
+        function onResize(e) {
+            if (!resizeElement) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            let newWidth = startWidth + deltaX;
+            let newHeight = startHeight + deltaY;
+            
+            // 保持等比缩放
+            const ratio = startWidth / startHeight;
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // 以宽度为主
+                newWidth = Math.max(50, Math.min(newWidth, 200));
+                newHeight = Math.round(newWidth / ratio);
+            } else {
+                // 以高度为主
+                newHeight = Math.max(40, Math.min(newHeight, 150));
+                newWidth = Math.round(newHeight * ratio);
+            }
+            
+            resizeElement.style.width = newWidth + 'px';
+            resizeElement.style.height = newHeight + 'px';
+        }
+        
+        function stopResize() {
+            resizeElement = null;
+            document.removeEventListener('mousemove', onResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+        
+        // 点击编辑器外部时关闭聚焦
+        document.addEventListener('click', function(e) {
+            const editor = document.getElementById('editorArea');
+            if (!editor.contains(e.target) && !document.querySelector('.draggable-image')?.contains(e.target)) {
+                window.getSelection().removeAllRanges();
+            }
+        });
+        
+        window.addEventListener('load', loadData);
+    </script>
+</body>
+</html>
