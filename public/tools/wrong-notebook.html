@@ -102,7 +102,6 @@
             margin-bottom: 20px;
         }
 
-        /* 12×8cm 编辑区域 */
         .editor-wrapper {
             width: 454px;
             height: 303px;
@@ -139,7 +138,6 @@
             border-radius: 2px;
         }
 
-        /* 可拖拽图片容器 */
         .draggable-image {
             position: absolute;
             cursor: move;
@@ -305,29 +303,26 @@
                 page-break-after: avoid;
             }
 
-            /* 装订线：只占左侧 8mm */
+            /* 装订线：改成一根纯虚线，不占背景不挤空间 */
             .binding-line {
+                position: absolute;
+                left: 6mm; /* 稍微往里放一点点，避开打印机物理不可打印边缘 */
+                top: 0;
+                width: 0;
+                height: 210mm;
+                border-left: 1px dashed #999;
+                z-index: 10;
+            }
+
+            /* 四等分网格：严格 297mm 均分 */
+            .cards-grid {
                 position: absolute;
                 left: 0;
                 top: 0;
-                width: 8mm;
-                height: 210mm;
-                background-color: #f5f5f5;
-                border-right: 2px dashed #999;
-                z-index: 2;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            /* 四等分网格 */
-            .cards-grid {
-                position: absolute;
-                left: 8mm;
-                top: 0;
-                width: 289mm;
+                width: 297mm;
                 height: 210mm;
                 display: grid;
-                grid-template-columns: 144.5mm 144.5mm;
+                grid-template-columns: 148.5mm 148.5mm;
                 grid-template-rows: 105mm 105mm;
                 z-index: 1;
             }
@@ -339,6 +334,7 @@
                 position: relative;
             }
 
+            /* 关键：卡片严格居中，没有任何位移 */
             .print-card {
                 width: 120mm;
                 height: 80mm;
@@ -374,12 +370,12 @@
                 color: #333;
             }
 
-            /* ===== 中间裁剪线：用 border 实现，确保打印出来 ===== */
+            /* ===== 中间裁剪线：绝对居中 ===== */
             .dividers {
                 position: absolute;
-                left: 8mm;
+                left: 0;
                 top: 0;
-                width: 289mm;
+                width: 297mm;
                 height: 210mm;
                 pointer-events: none;
                 z-index: 3;
@@ -391,16 +387,16 @@
                 position: absolute;
                 left: 0;
                 right: 0;
-                top: 50%;                 /* 105mm */
+                top: 50%;
                 height: 0;
-                border-top: 1px dashed #333;  /* 想实线改成 solid */
+                border-top: 1px dashed #333;
             }
 
             .v-divider {
                 position: absolute;
                 top: 0;
                 bottom: 0;
-                left: 50%;                /* 152.5mm 绝对位置 */
+                left: 50%;
                 width: 0;
                 border-left: 1px dashed #333;
             }
@@ -421,22 +417,33 @@
                 border-top: 1px solid #666;
             }
 
-            .crop-mark-tl { top: 0; left: 8mm; }
+            .crop-mark-tl { top: 0; left: 0; }
+            .crop-mark-tr { top: 0; right: 0; transform: scaleX(-1); }
+            .crop-mark-bl { bottom: 0; left: 0; transform: scaleY(-1); }
+            .crop-mark-br { bottom: 0; right: 0; transform: scale(-1, -1); }
 
             .crop-mark-tc {
                 top: 0;
-                left: calc(8mm + 50% - 2.5mm);
+                left: calc(50% - 2.5mm);
                 width: 5mm;
                 height: 3mm;
                 border-left: 0;
                 border-top: 1px solid #666;
             }
 
-            .crop-mark-tr { top: 0; right: 0; transform: scaleX(-1); }
+            .crop-mark-bc {
+                bottom: 0;
+                left: calc(50% - 2.5mm);
+                width: 5mm;
+                height: 3mm;
+                border-left: 0;
+                border-top: 0;
+                border-bottom: 1px solid #666;
+            }
 
             .crop-mark-cl {
                 top: calc(50% - 2.5mm);
-                left: 8mm;
+                left: 0;
                 width: 3mm;
                 height: 5mm;
                 border-top: 0;
@@ -452,20 +459,6 @@
                 border-left: 0;
                 border-right: 1px solid #666;
             }
-
-            .crop-mark-bl { bottom: 0; left: 8mm; transform: scaleY(-1); }
-
-            .crop-mark-bc {
-                bottom: 0;
-                left: calc(8mm + 50% - 2.5mm);
-                width: 5mm;
-                height: 3mm;
-                border-left: 0;
-                border-top: 0;
-                border-bottom: 1px solid #666;
-            }
-
-            .crop-mark-br { bottom: 0; right: 0; transform: scale(-1, -1); }
         }
     </style>
 </head>
